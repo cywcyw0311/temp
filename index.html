@@ -885,13 +885,13 @@ function hurtPlayer() {
     if (g.hp <= 0) ghostDie();
     return;
   }
-  P.lives--; P.weapon = Math.max(1, P.weapon - 1); P.inv = 1.8; hurtFlash = .6; addShake(10);
+  P.lives--; P.inv = 1.8;   // 受伤只扣命，火力等级保留 hurtFlash = .6; addShake(10);
   Sfx.play('hurt'); vibrate([60, 30, 60]);
   explode(P.x, P.y, '255,120,100', 14, 200);
   if (P.lives <= 0) enterSoul();
 }
 function enterSoul() {
-  P.mode = 'soul'; P.lives = 0; P.soulE = 100; P.ghost = null; P.inv = 0; P.weapon = 1; P.extra = 0; P.od = 0;
+  P.mode = 'soul'; P.lives = 0; P.soulE = 100; P.ghost = null; P.inv = 0; P.extra = 0; P.od = 0;   // 火力等级 P.weapon 保留
   P.vx = P.vy = 0;
   explode(P.x, P.y, '255,140,90', 44, 330); addShake(16); whiteFlash = .55;
   Sfx.play('bigboom'); Sfx.play('soul'); vibrate([100, 50, 200]);
@@ -918,7 +918,7 @@ function possess(e) {
 }
 function revive() {
   if (P.mode === 'possessed') explode(P.x, P.y, SKILL[P.ghost.type].rgb, 24, 240);
-  P.mode = 'ship'; P.lives = 2; P.weapon = 1; P.extra = 0; P.ghost = null; P.od = 0;
+  P.mode = 'ship'; P.lives = 2; P.extra = 0; P.ghost = null; P.od = 0;   // 火力等级 P.weapon 保留
   P.shield = Math.max(P.shield, 4); P.inv = 2; P.soulE = 100;
   for (let i = 0; i < 3; i++) rings.push({ x: P.x, y: P.y, r: 6, grow: 170 + i * 80, life: -i * .08, max: .55, rgb: '255,230,140', w: 3 });
   whiteFlash = .5; Sfx.play('revive'); vibrate(80);
