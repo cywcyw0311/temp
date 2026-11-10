@@ -81,7 +81,10 @@ button{font-family:inherit}
 @keyframes readypulse{50%{box-shadow:0 0 30px rgba(120,230,255,.95),inset 0 -5px 12px rgba(0,0,0,.28);transform:scale(1.07)}}
 #btnB.ready.press{animation:none}
 #btnB.od{--rc:#ff7a3a;background:radial-gradient(circle at 36% 28%,#ffc38a,#ff6a2e 55%,#8f2200)}
-.act.dim{opacity:.38;filter:grayscale(.7)}
+.act{opacity:.5}
+.act.press,#btnA.locked,#btnB.ready{opacity:.72}
+.act.dim{opacity:.26;filter:grayscale(.7)}
+.act.ghost{opacity:.16}
 #btnB.shake{animation:shake .25s}
 @keyframes shake{25%{transform:translateX(-5px)}75%{transform:translateX(5px)}}
 
@@ -160,7 +163,7 @@ ol.list li.empty{display:block;text-align:center;color:#7f93c4;padding:calc(var(
         <li><b>A</b>　射击；<b>长按</b>锁定连发，<b>再按</b>解除</li>
         <li><b>B</b>　能量满后释放「星爆」冲击波</li>
         <li><b>弹种道具</b>　激光 / 锁定 / 爆破弹，拾取即切换，各弹种等级独立保留；<b>导弹吊舱</b>附带 2 枚跟踪导弹</li>
-        <li class="soul"><b>阵亡</b>　化为灵魂，撞向敌机即可<b>夺舍</b>，获得它的速射技能；魂能不随时间减少，夺舍的飞机被击毁才消耗</li>
+        <li class="soul"><b>阵亡</b>　化为灵魂，撞向敌机即可<b>夺舍</b>，获得它的速射技能；魂能不随时间减少，夺舍的飞机被击毁才消耗；<b>死亡后弹种等级清零</b></li>
       </ul>
     </div>
     <div class="author">作者：蔡蕴文</div>
@@ -239,7 +242,7 @@ const Sfx = (() => {
   let ac = null, master = null, noiseBuf = null, muted = false;
   const last = {};
   try { muted = localStorage.getItem('starraid.mute') === '1'; } catch (e) {}
-  const gap = { shoot: 55, laser: 55, lock: 70, blast: 100, missile: 80, eshoot: 90, eshoot2: 100, boom: 45, pop: 40, hit: 60, bigboom: 120,
+  const gap = { shoot: 55, laser: 55, lock: 70, blast: 100, missile: 80, eshoot: 90, eshoot2: 100, spiral: 80, dash: 150, boom: 45, pop: 40, hit: 60, bigboom: 120,
     snipe: 100, mineDrop: 100, mineBeep: 120, minePop: 60, shieldHit: 60, shieldBreak: 120, emissile: 140 };
 
   function init() {
@@ -284,6 +287,12 @@ const Sfx = (() => {
     blast:   () => { tone(220, 80, 0.16, 'square', 0.05); noise(0.12, 0.08, 1500, 200); },
     missile: () => { noise(0.14, 0.07, 3000, 500); tone(280, 720, 0.12, 'sawtooth', 0.025); },
     eshoot:  () => tone(320, 150, 0.1, 'sawtooth', 0.028),
+    cloak:   () => tone(900, 180, 0.3, 'sine', 0.06),                                                // 隐形机隐身
+    decloak: () => { tone(200, 1000, 0.22, 'sine', 0.07); tone(400, 1500, 0.18, 'triangle', 0.03); },   // 现身
+    spiral:  () => tone(760, 520, 0.05, 'triangle', 0.03),                                           // 旋涡弹幕
+    dash:    () => { noise(0.45, 0.2, 500, 3800); tone(140, 620, 0.4, 'sawtooth', 0.07); },          // 冲锋
+    split:   () => { tone(500, 900, 0.1, 'square', 0.05); tone(500, 300, 0.1, 'square', 0.05, 0.05); },   // 分裂
+    alarm:   () => { tone(880, 880, 0.1, 'square', 0.05); tone(660, 660, 0.12, 'square', 0.05, 0.14); },   // 敌方增援
     eshoot2: () => tone(210, 90, 0.14, 'sawtooth', 0.035),                                          // 炮艇：低沉
     pop:     () => { noise(0.14, 0.14, 2600, 300); tone(320, 110, 0.12, 'sine', 0.1); },            // 小型敌机爆炸：清脆
     snipeCharge: () => { tone(260, 1900, 0.95, 'triangle', 0.045); tone(262, 1910, 0.95, 'sine', 0.03); },   // 狙击机蓄力：音调上扬
@@ -553,6 +562,33 @@ sprEnemy.push(
     g.fillStyle = '#3a0030'; g.fillRect(-2, -26, 4, 8);
   })
 );
+sprEnemy.push(
+  mk(46, 42, g => {                                  // 10 分裂机：两个并排机体
+    for (const sd of [-1, 1]) {
+      g.save(); g.translate(sd * 8.5, 0);
+      fillStroke(g, mirror([[0, -15], [5, -8], [8, 6], [5, 15], [0, 12]]), vgrad(g, -15, 15, '#ffc0ea', '#a01f78'), '#ffe2f5', 1);
+      g.beginPath(); g.arc(0, -1, 2.6, 0, TAU); g.fillStyle = '#fff'; g.fill(); g.restore();
+    }
+    g.fillStyle = '#5a0f44'; g.fillRect(-3, -4, 6, 9); g.fillStyle = '#ff8ad8'; g.fillRect(-1.5, -2, 3, 5);
+  }),
+  mk(44, 40, g => {                                  // 11 隐形机：扁平隐身三角翼
+    fillStroke(g, mirror([[0, -16], [7, -4], [20, 10], [10, 9], [5, 15], [0, 11]]), vgrad(g, -16, 15, '#8f97e6', '#161a4a'), '#c9d0ff', 1);
+    g.strokeStyle = 'rgba(200,210,255,.5)'; g.lineWidth = 1; g.beginPath(); g.moveTo(0, -12); g.lineTo(-13, 8); g.moveTo(0, -12); g.lineTo(13, 8); g.stroke();
+    fillStroke(g, mirror([[0, -8], [3, -1], [0, 5]]), '#b8f0ff');
+  }),
+  mk(52, 52, g => {                                  // 12 旋涡机：圆盘 + 四个喷口
+    g.fillStyle = '#7a3a08'; for (let i = 0; i < 4; i++) { g.save(); g.rotate(i * Math.PI / 2 + Math.PI / 4); g.fillRect(-3.5, -24, 7, 10); g.restore(); }
+    g.beginPath(); g.arc(0, 0, 18, 0, TAU); g.fillStyle = vgrad(g, -18, 18, '#ffd29a', '#a24a08'); g.fill(); g.strokeStyle = '#ffe9c8'; g.lineWidth = 1.2; g.stroke();
+    g.strokeStyle = 'rgba(90,30,0,.6)'; g.lineWidth = 2; g.beginPath(); for (let a = 0; a < 7; a += .25) { const r = 2 + a * 2; g.lineTo(Math.cos(a) * r, Math.sin(a) * r); } g.stroke();
+    g.beginPath(); g.arc(0, 0, 4.5, 0, TAU); g.fillStyle = '#fff3d0'; g.fill();
+  }),
+  mk(46, 56, g => {                                  // 13 冲锋舰：厚重撞角
+    fillStroke(g, mirror([[0, -26], [4, -12], [12, -6], [18, 8], [14, 22], [5, 18], [0, 22]]), vgrad(g, -26, 22, '#ffb09a', '#8a1a08'), '#ffd9cc', 1.2);
+    fillStroke(g, mirror([[0, -26], [3.5, -10], [0, -4]]), '#fff');
+    g.fillStyle = '#3a0a04'; g.fillRect(-9, 2, 18, 5);
+    g.fillStyle = '#ffd24a'; g.fillRect(-15, 12, 4, 9); g.fillRect(11, 12, 4, 9);
+  })
+);
 const sprMine = mk(24, 24, g => {                     // 水雷
   g.strokeStyle = '#a9862a'; g.lineWidth = 1.6;
   for (let i = 0; i < 8; i++) { const a = i * Math.PI / 4; g.beginPath(); g.moveTo(Math.cos(a) * 7, Math.sin(a) * 7); g.lineTo(Math.cos(a) * 10.5, Math.sin(a) * 10.5); g.stroke(); }
@@ -639,6 +675,14 @@ const STAR_LAYERS = [
   { n: 16, spd: 96, size: 2.1, alpha: 1,   par: 34, streak: true }
 ];
 const STAR_COLORS = ['#ffffff', '#cfe3ff', '#ffe9c4', '#c4d6ff'];
+const BG_THEMES = [   // 每 3 波换一个星区，渐变过渡
+  { base: '#04050f', cols: ['110,60,200', '40,90,220', '30,160,190', '190,60,150'] },
+  { base: '#0e0407', cols: ['210,60,60', '230,120,40', '150,40,100', '90,40,160'] },
+  { base: '#03100e', cols: ['30,180,130', '40,120,210', '130,210,90', '20,90,120'] },
+  { base: '#0b0514', cols: ['170,70,230', '235,80,170', '80,80,235', '40,160,220'] },
+  { base: '#0e0a03', cols: ['225,170,50', '205,90,40', '90,120,210', '230,210,120'] }
+];
+let nebulas = [], bgTheme = 0, bgPrev = 0, bgFade = 1, rocks = [], meteor = null, meteorCd = 3;
 let stars = [], nebula = null, nebY = 0, camS = 0, bgMul = 1, bgMulT = 1, planet = null, planetCd = 4;
 const planetSprs = [];
 function makePlanet(c1, c2, ring) {
@@ -652,26 +696,46 @@ function makePlanet(c1, c2, ring) {
     if (ring) { g.save(); g.rotate(-.35); g.strokeStyle = 'rgba(220,200,255,.45)'; g.lineWidth = 7; g.beginPath(); g.ellipse(0, 0, 70, 17, 0, 0, Math.PI); g.stroke(); g.restore(); }
   });
 }
-planetSprs.push(makePlanet('#7fb3ff', '#1b2f78', false), makePlanet('#ffb48a', '#6b2420', true), makePlanet('#9cf0c8', '#1b5a55', false));
+planetSprs.push(makePlanet('#7fb3ff', '#1b2f78', false), makePlanet('#ffb48a', '#6b2420', true), makePlanet('#9cf0c8', '#1b5a55', false),
+  makePlanet('#e9c6ff', '#4a1f7a', true), makePlanet('#ffe9a8', '#7a4a12', false), makePlanet('#d0d6e6', '#39415a', false));
+function makeGalaxy(rgb) {   // 远处的旋涡星系
+  return mk(150, 150, g => {
+    g.rotate(-.5); g.scale(1, .45);
+    g.drawImage(glow(rgb), -70, -70, 140, 140);
+    g.strokeStyle = 'rgba(' + rgb + ',.35)'; g.lineWidth = 5;
+    for (const o of [0, Math.PI]) { g.beginPath(); for (let a = 0; a < 5.2; a += .2) { const r = 6 + a * 11; g.lineTo(Math.cos(a + o) * r, Math.sin(a + o) * r); } g.stroke(); }
+    g.drawImage(glow('255,255,255'), -16, -16, 32, 32);
+  });
+}
+planetSprs.push(makeGalaxy('170,150,255'), makeGalaxy('255,190,150'));
+const rockSprs = [0, 1, 2].map(i => mk(40, 40, g => {   // 小行星
+  const n = 9, pts = [];
+  for (let k = 0; k < n; k++) { const a = k / n * TAU, r = 11 + ((k * 7 + i * 5) % 5) * 1.6; pts.push([Math.cos(a) * r, Math.sin(a) * r]); }
+  fillStroke(g, pts, vgrad(g, -16, 16, '#8b8496', '#2b2633'), 'rgba(200,195,215,.5)', 1);
+  g.fillStyle = 'rgba(0,0,0,.28)'; [[-4, -3, 3], [5, 4, 2.2], [1, -8, 1.6]].forEach(c => { g.beginPath(); g.arc(c[0], c[1], c[2], 0, TAU); g.fill(); });
+}));
 
-function buildNebula() {
-  nebula = document.createElement('canvas');
+function buildNebula() { nebulas = []; nebula = getNebula(bgTheme); }
+function getNebula(i) {
+  if (nebulas[i]) return nebulas[i];
+  const th = BG_THEMES[i], c = document.createElement('canvas');
   const nw = Math.ceil(W / 3), nh = Math.ceil(H / 3);
-  nebula.width = nw; nebula.height = nh;
-  const g = nebula.getContext('2d'); g.scale(nw / W, nh / H);   // 精确映射，上下无缝平铺
-  g.fillStyle = '#04050f'; g.fillRect(0, 0, W, H);
-  const cols = ['110,60,200', '40,90,220', '30,160,190', '190,60,150'];
-  for (let i = 0; i < 7; i++) {
-    const x = rand(0, W), y = rand(0, H), r = rand(110, 230), c = pick(cols);
+  c.width = nw; c.height = nh;
+  const g = c.getContext('2d'); g.scale(nw / W, nh / H);   // 精确映射，上下无缝平铺
+  g.fillStyle = th.base; g.fillRect(0, 0, W, H);
+  for (let k = 0; k < 9; k++) {
+    const x = rand(0, W), y = rand(0, H), r = rand(100, 240), col = pick(th.cols);
     for (const oy of [-H, 0, H]) {
       const gr = g.createRadialGradient(x, y + oy, 0, x, y + oy, r);
-      gr.addColorStop(0, 'rgba(' + c + ',.2)'); gr.addColorStop(1, 'rgba(' + c + ',0)');
+      gr.addColorStop(0, 'rgba(' + col + ',.24)'); gr.addColorStop(1, 'rgba(' + col + ',0)');
       g.fillStyle = gr; g.fillRect(0, 0, W, H);
     }
   }
+  return nebulas[i] = c;
 }
 function buildStars() {
   stars = STAR_LAYERS.map(L => Array.from({ length: L.n }, () => ({ x: rand(0, W), y: rand(0, H), c: pick(STAR_COLORS), tw: rand(0, TAU) })));
+  rocks = Array.from({ length: 5 }, () => ({ x: rand(0, W), y: rand(0, H), s: rand(.5, 1.5), rot: rand(0, TAU), vr: rand(-.5, .5), spd: rand(22, 60), spr: pick(rockSprs) }));
 }
 function updateBg(dt) {
   bgMul = lerp(bgMul, bgMulT, 1 - Math.exp(-dt * 3));
@@ -682,6 +746,12 @@ function updateBg(dt) {
     const arr = stars[i], d = L.spd * bgMul * dt;
     for (const s of arr) { s.y += d; if (s.y > H + 4) { s.y -= H + 8; s.x = rand(0, W); } }
   });
+  const th = state === 'menu' ? 0 : Math.floor(Math.max(0, wave - 1) / 3) % BG_THEMES.length;
+  if (th !== bgTheme) { bgPrev = bgTheme; bgTheme = th; bgFade = 0; }
+  bgFade = Math.min(1, bgFade + dt / 3);
+  for (const r of rocks) { r.y += r.spd * bgMul * dt; r.rot += r.vr * dt; if (r.y > H + 40) { r.y = -40; r.x = rand(0, W); r.s = rand(.5, 1.5); r.spr = pick(rockSprs); } }
+  if (meteor) { meteor.x += meteor.vx * dt; meteor.y += meteor.vy * dt; if ((meteor.life -= dt) <= 0) meteor = null; }
+  else if ((meteorCd -= dt) <= 0) { const d = Math.random() < .5 ? 1 : -1; meteor = { x: d > 0 ? rand(-20, W * .5) : rand(W * .5, W + 20), y: rand(-20, H * .4), vx: d * rand(260, 420), vy: rand(180, 320), life: .9 }; meteorCd = rand(3, 8); }
   if (planet) { planet.y += 9 * bgMul * dt; if (planet.y > H + 110) planet = null; }
   else if ((planetCd -= dt) <= 0) {
     planet = { spr: pick(planetSprs), x: rand(40, W - 40), y: -100, s: rand(.8, 1.5) };
@@ -691,13 +761,23 @@ function updateBg(dt) {
 function drawBg(t) {
   ctx.imageSmoothingEnabled = true;
   ctx.globalAlpha = 1;
-  ctx.drawImage(nebula, 0, nebY, W, H);
-  ctx.drawImage(nebula, 0, nebY - H, W, H);
+  const nb = getNebula(bgFade < 1 ? bgPrev : bgTheme);
+  ctx.drawImage(nb, 0, nebY, W, H); ctx.drawImage(nb, 0, nebY - H, W, H);
+  if (bgFade < 1) { const n2 = getNebula(bgTheme); ctx.globalAlpha = bgFade; ctx.drawImage(n2, 0, nebY, W, H); ctx.drawImage(n2, 0, nebY - H, W, H); ctx.globalAlpha = 1; }
   if (planet) {
     const px = planet.x - camS * 6, sz = 150 * planet.s;
     ctx.drawImage(planet.spr.c, px - sz / 2, planet.y - sz / 2, sz, sz);
   }
+  if (meteor) {   // 流星
+    const k = Math.min(1, meteor.life / .3), g2 = ctx.createLinearGradient(meteor.x, meteor.y, meteor.x - meteor.vx * .16, meteor.y - meteor.vy * .16);
+    g2.addColorStop(0, 'rgba(255,255,255,' + (.9 * k) + ')'); g2.addColorStop(1, 'rgba(160,200,255,0)');
+    ctx.strokeStyle = g2; ctx.lineWidth = 1.6; ctx.beginPath(); ctx.moveTo(meteor.x, meteor.y); ctx.lineTo(meteor.x - meteor.vx * .16, meteor.y - meteor.vy * .16); ctx.stroke();
+  }
   STAR_LAYERS.forEach((L, i) => {
+    if (i === 2) {   // 小行星带：位于中、近两层星星之间
+      ctx.globalAlpha = .8;
+      for (const r of rocks) { let x = (r.x - camS * 24) % (W + 60); if (x < -30) x += W + 60; ctx.save(); ctx.translate(x, r.y); ctx.rotate(r.rot); put(r.spr, 0, 0, r.s); ctx.restore(); }
+    }
     const px = camS * L.par;
     for (const s of stars[i]) {
       let x = (s.x - px) % W; if (x < 0) x += W;
@@ -723,7 +803,11 @@ const ET = [  // 敌机类型（sfx：被击毁时的爆炸音效）
   { name: '布雷机', r: 19, hp: 5,   score: 55,   rgb: '255,205,60',  sfx: 'boom' },     // 横穿屏幕投放水雷，延时爆裂
   { name: '护盾舰', r: 20, hp: 5,   score: 65,   rgb: '80,210,255',  sfx: 'boom' },     // 先要打破护盾
   { name: '导弹艇', r: 18, hp: 4,   score: 60,   rgb: '200,255,80',  sfx: 'boom' },     // 发射可被击落的追踪导弹
-  { name: '激光舰', r: 24, hp: 9,   score: 90,   rgb: '255,100,190', sfx: 'bigboom' }   // 红线预警后喷出竖直光束
+  { name: '激光舰', r: 24, hp: 9,   score: 90,   rgb: '255,100,190', sfx: 'bigboom' },  // 红线预警后喷出竖直光束
+  { name: '分裂机', r: 17, hp: 4,   score: 50,   rgb: '255,140,220', sfx: 'boom' },     // 被击毁后分裂成两架侦察机
+  { name: '隐形机', r: 15, hp: 4,   score: 70,   rgb: '150,160,255', sfx: 'pop' },      // 隐身时无法被锁定和命中，现身时扇形齐射
+  { name: '旋涡机', r: 20, hp: 8,   score: 85,   rgb: '255,150,60',  sfx: 'bigboom' },  // 喷出旋转的螺旋弹幕
+  { name: '冲锋舰', r: 20, hp: 7,   score: 75,   rgb: '255,90,60',   sfx: 'boom' }      // 红线预警后横向高速冲撞
 ];
 // 夺舍后继承的敌机技能（射速远高于玩家基础的 0.17s/发）
 const SKILL = [
@@ -736,7 +820,11 @@ const SKILL = [
   { name: '四联散射', interval: .14, shots: 4, spread: .14, dmg: 1,   speed: 600, move: .9,   hp: 6, pierce: 0, rgb: '255,215,90',  br: 4 },
   { name: '护盾连射', interval: .13, shots: 1, spread: 0,   dmg: 2,   speed: 700, move: .95,  hp: 6, pierce: 0, rgb: '110,220,255', br: 5, shield: 6 },
   { name: '追踪导弹', interval: .2,  shots: 2, spread: 0,   dmg: 2,   speed: 0,   move: .95,  hp: 5, pierce: 0, rgb: '255,170,90',  br: 4, kind: 'missile' },
-  { name: '激光连射', interval: .08, shots: 1, spread: 0,   dmg: .55, speed: 1500, move: .85, hp: 9, pierce: 0, rgb: '255,110,255', br: 3, kind: 'laser' }
+  { name: '激光连射', interval: .08, shots: 1, spread: 0,   dmg: .55, speed: 1500, move: .85, hp: 9, pierce: 0, rgb: '255,110,255', br: 3, kind: 'laser' },
+  { name: '分裂三连', interval: .13, shots: 3, spread: .16, dmg: 1,   speed: 640, move: 1.0,  hp: 5, pierce: 0, rgb: '255,150,225', br: 4 },
+  { name: '相位穿刺', interval: .11, shots: 1, spread: 0,   dmg: 1.2, speed: 900, move: 1.15, hp: 4, pierce: 3, rgb: '170,180,255', br: 4 },
+  { name: '旋涡弹幕', interval: .12, shots: 5, spread: .22, dmg: 1,   speed: 560, move: .85,  hp: 8, pierce: 0, rgb: '255,170,80',  br: 4 },
+  { name: '冲锋重炮', interval: .2,  shots: 2, spread: 0,   dmg: 3,   speed: 620, move: 1.2,  hp: 8, pierce: 0, rgb: '255,110,80',  br: 6 }
 ];
 
 const PLAYER_RGB = '120,225,255';
@@ -749,8 +837,8 @@ const SHOTS = {  // [枪口偏移 x, 偏转角度(度)]
 };
 // 各弹种 1~5 级参数
 const LASER = { beams: [[0], [0], [-6, 6], [-9, 0, 9], [-12, -4, 4, 12]], dmg: [.45, .7, .6, .6, .62], r: [3, 4, 3.5, 3.5, 4], iv: .07 };   // 穿透全部敌机
-const LOCKW = { n: [2, 3, 4, 5, 6], turn: [8, 8.5, 9, 9.5, 10], iv: .26 };                                                                // 自动锁定不同目标
-const BLAST = { shells: [1, 1, 2, 2, 3], radius: [40, 48, 56, 64, 72], dmg: [2, 3, 3, 4, 5], iv: .42 };                                   // 命中后范围爆炸
+const LOCKW = { n: [1, 2, 3, 3, 4], dmg: [.9, .9, .9, 1.1, 1.1], turn: [8, 8.5, 9, 9.5, 10], iv: .3 };                                                                // 自动锁定不同目标
+const BLAST = { shells: [1, 1, 2, 2, 3], radius: [44, 52, 60, 68, 76], dmg: [3, 4, 3.5, 4.5, 5], iv: .36 };                                   // 命中后范围爆炸
 const POD = { iv: [1.1, .85, .62], dmg: [2, 2, 3] };                                                                                      // 导弹吊舱 1~3 级
 const BASE_SPEED = 290, LOCK_MS = 480, MAX_LIVES = 5;
 
@@ -944,6 +1032,26 @@ function buildWave(n) {
       for (let i = 0; i < cnt; i++) q.push({ t: t + i * .8, type: 8, x: W * (i + 1) / (cnt + 1), y: -40, ai: 'hover', ty: 85 + i * 45, amp: 70, hoverT: rand(8, 10) });
       return 7;
     },
+    split(t) {   // 分裂机
+      const cnt = n >= 8 ? 4 : 3;
+      for (let i = 0; i < cnt; i++) q.push({ t: t + i * .5, type: 10, x: W * (i + 1) / (cnt + 1), y: -30, ai: 'sine', vy: 62, amp: 30, f: 1.1, ph: i });
+      return 5;
+    },
+    cloak(t) {   // 隐形机
+      const cnt = n >= 12 ? 3 : 2;
+      for (let i = 0; i < cnt; i++) q.push({ t: t + i * .7, type: 11, x: W * (i + 1) / (cnt + 1), y: -30, ai: 'hover', ty: 110 + (i % 2) * 70, amp: 64, hoverT: rand(8, 10) });
+      return 6.5;
+    },
+    spiral(t) {  // 旋涡机
+      q.push({ t, type: 12, x: rand(110, W - 110), y: -40, ai: 'hover', ty: rand(120, 170), amp: 40, hoverT: 10 });
+      if (n >= 14) q.push({ t: t + 2, type: 12, x: rand(70, W - 70), y: -40, ai: 'hover', ty: rand(200, 240), amp: 30, hoverT: 9 });
+      return 8;
+    },
+    charge(t) {  // 冲锋舰
+      const cnt = n >= 10 ? 3 : 2, s0 = side();
+      for (let i = 0; i < cnt; i++) { const d = i % 2 ? -s0 : s0; q.push({ t: t + i * 1.5, type: 13, x: d > 0 ? -30 : W + 30, y: rand(220, H - 240), ai: 'charge', dirv: d }); }
+      return 6;
+    },
     frigate(t) { // 激光舰：红线预警后喷出竖直光束
       q.push({ t, type: 9, x: rand(90, W - 90), y: -60, ai: 'laser', ty: rand(95, 135) });
       if (n >= 14) q.push({ t: t + 2.5, type: 9, x: rand(60, W - 60), y: -60, ai: 'laser', ty: rand(150, 190) });
@@ -956,23 +1064,27 @@ function buildWave(n) {
     pat.stream(6, 0); pat.stream(16, 1);
     if (n >= 10) pat.dive(11);
   } else {
-    const groups = n < 3 ? 2 : n < 7 ? 3 : 4;
+    const groups = n < 2 ? 2 : n < 5 ? 3 : n < 9 ? 4 : 5;
     const pool = [() => pat.stream(t, n >= 6 && Math.random() < .4 ? 1 : 0), () => pat.line(t, 0)];
     if (n >= 2) pool.push(() => pat.vee(t, 1), () => pat.stream(t, 1));
     if (n >= 3) pool.push(() => pat.dive(t), () => pat.hover(t, 1, 2));
     if (n >= 4) pool.push(() => pat.hover(t, 2, n >= 9 ? 2 : 1));
+    if (n >= 2) pool.push(() => pat.split(t));
     if (n >= 3) pool.push(() => pat.snipe(t));
     if (n >= 4) pool.push(() => pat.mines(t));
-    if (n >= 6) pool.push(() => pat.shield(t));
-    if (n >= 7) pool.push(() => pat.missile(t));
-    if (n >= 8) pool.push(() => pat.frigate(t));
-    const intro = { 3: 'snipe', 4: 'mines', 6: 'shield', 7: 'missile', 8: 'frigate' }[n];   // 每种新敌机首次出现的那一波必定出场
+    if (n >= 6) pool.push(() => pat.charge(t));
+    if (n >= 7) pool.push(() => pat.shield(t));
+    if (n >= 8) pool.push(() => pat.cloak(t));
+    if (n >= 9) pool.push(() => pat.missile(t));
+    if (n >= 11) pool.push(() => pat.spiral(t));
+    if (n >= 12) pool.push(() => pat.frigate(t));
+    const intro = { 2: 'split', 3: 'snipe', 4: 'mines', 6: 'charge', 7: 'shield', 8: 'cloak', 9: 'missile', 11: 'spiral', 12: 'frigate' }[n];   // 每种新敌机首次出现的那一波必定出场
     let lastIdx = -1;
     for (let i = 0; i < groups; i++) {
       let dur;
       if (i === 0 && intro) dur = pat[intro](t);
       else { let idx; do { idx = randi(0, pool.length - 1); } while (idx === lastIdx && pool.length > 1); lastIdx = idx; dur = pool[idx](); }
-      t += dur * (i === groups - 1 ? 0 : .8);
+      t += dur * (i === groups - 1 ? 0 : .65);
     }
   }
   q.sort((a, b) => a.t - b.t);
@@ -982,19 +1094,22 @@ function buildWave(n) {
 function spawnEnemy(ev) {
   const def = ET[ev.type];
   let hp = def.hp;
-  if (ev.type >= 1 && ev.type !== 4) hp += Math.max(0, Math.floor((wave - 1) / 4));
-  if (ev.type === 4) hp = 110 + 60 * (wave / 5 - 1);
+  if (ev.type >= 1 && ev.type !== 4) hp = Math.ceil(hp * 1.25) + Math.max(0, Math.floor((wave - 1) / 3));
+  else if (ev.type === 0 && wave >= 6) hp = 2;
+  if (ev.type === 4) hp = 220 + 130 * (wave / 5 - 1);
   // 狙击机(5)、布雷机(6)、激光舰(9) 由各自的 AI 负责攻击，不走通用射击
-  const shoots = ev.type === 1 || ev.type === 2 || ev.type === 7 || ev.type === 8 || (ev.type === 0 && wave >= 3) || ev.type === 4;
-  const iv = ev.type === 1 ? 2.1 : ev.type === 2 ? 2.5 : ev.type === 0 ? 3.4 : ev.type === 7 ? 2.4 : ev.type === 8 ? 3.1 : ev.type === 6 ? 1.2 : 99;
+  const shoots = ev.type === 1 || ev.type === 2 || ev.type === 7 || ev.type === 8 || (ev.type === 0 && wave >= 2) || ev.type === 4 || ev.type === 10;
+  const iv = ev.type === 1 ? 2.1 : ev.type === 2 ? 2.5 : ev.type === 0 ? 3.4 : ev.type === 7 ? 2.4 : ev.type === 8 ? 3.1 : ev.type === 6 ? 1.2 : ev.type === 10 ? 2.2 : 99;
   const sh = ev.type === 7 ? 6 + Math.floor(wave / 8) : 0;
   enemies.push({
     type: ev.type, x: ev.x, y: ev.y, x0: ev.x, vx: 0, vy: ev.vy || 0, r: def.r, age: 0, hitT: 0, flashT: 0, phase: 0, pt: 0, dead: false,
     hp, maxHp: hp, ai: ev.ai, th: ev.th || 0, om: ev.om || 0, sp: ev.sp || 0, amp: ev.amp || 0, f: ev.f || 1, ph: ev.ph || 0,
     ty: ev.ty || 120, hoverT: ev.hoverT || 6, rot: Math.PI, shoots,
-    ivl: Math.max(.9, iv - Math.min(wave * .05, 1)), fireT: rand(.8, 2), bt: 1.2, rt: .5, pat: 0,
+    ivl: Math.max(.7, iv * .85 - Math.min(wave * .06, 1.1)), fireT: rand(.8, 2), bt: 1.2, rt: .5, pat: 0,
+    alpha: 1, cloaked: false, ct: rand(1, 2), fired: false, bn: 0, bt2: 0, sa: rand(0, TAU), noSplit: !!ev.noSplit,
     shield: sh, maxShield: sh, shieldT: 0, dirv: ev.dirv || 1, cd: ev.cd || 1.2, shots: 0, cycles: 0, sw: 0, aim: Math.PI / 2
   });
+  if (ev.type === 13) Sfx.play('snipeCharge');
   if (ev.type === 4) { showBanner('警告！', 'BOSS 来袭', '#ff6a8a', 2.4); Sfx.play('boss'); }
   else if (ev.type >= 5 && !seenTypes[ev.type]) { seenTypes[ev.type] = true; popup(W / 2, safeTop + 150, '新敌机：' + def.name, 'rgb(' + def.rgb + ')', 16, 1.9); }
 }
@@ -1007,8 +1122,9 @@ function aimEB(x, y, speed, off, r, rgb) {
   const a = Math.atan2(P.y - y, P.x - x) + (off || 0);
   spawnEB(x, y, Math.cos(a) * speed, Math.sin(a) * speed, r, rgb);
 }
+const diffK = () => 1.12 + Math.min(wave, 25) * .028;   // 敌弹速度随波次提升
 function enemyShoot(e) {
-  const k = 1 + Math.min(wave, 20) * .02;
+  const k = diffK();
   e.flashT = .09;
   Sfx.play(e.type === 8 ? 'emissile' : e.type === 2 ? 'eshoot2' : 'eshoot');
   const rgb = ET[e.type].rgb;
@@ -1017,6 +1133,7 @@ function enemyShoot(e) {
     if (wave >= 6) { spawnEB(e.x - 9, e.y + 12, 0, 200 * k, 5, rgb); spawnEB(e.x + 9, e.y + 12, 0, 200 * k, 5, rgb); }
     else spawnEB(e.x, e.y + 14, 0, 200 * k, 5, rgb);
   } else if (e.type === 2) { for (const o of [-.3, 0, .3]) aimEB(e.x, e.y + 16, 175 * k, o, 6, rgb); }
+  else if (e.type === 10) { aimEB(e.x - 8, e.y + 12, 170 * k, -.08, 5, rgb); aimEB(e.x + 8, e.y + 12, 170 * k, .08, 5, rgb); }
   else if (e.type === 7) { aimEB(e.x - 10, e.y + 14, 190 * k, 0, 5, rgb); aimEB(e.x + 10, e.y + 14, 190 * k, 0, 5, rgb); }
   else if (e.type === 8) {   // 导弹艇：两枚追踪导弹（可被击落）
     for (const sd of [-1, 1]) spawnEB(e.x + sd * 15, e.y + 8, sd * 55, 75, 5.5, '255,150,70',
@@ -1056,9 +1173,9 @@ function spawnPowerup(x, y, kind) {
   powerups.push({ x, y, x0: x, vy: 62, kind, t: 0, dead: false });
 }
 function dropFor(e) {
-  const chance = [.09, .16, .45, .12, 1, .22, .28, .32, .3, .5][e.type];
+  const chance = [.07, .13, .38, .1, 1, .18, .24, .28, .26, .42, .26, .26, .36, .26][e.type];
   pity++;
-  if (Math.random() < chance || pity >= 11) { pity = 0; spawnPowerup(e.x, e.y); }
+  if (Math.random() < chance || pity >= 13) { pity = 0; spawnPowerup(e.x, e.y); }
 }
 // 拾取弹种：切换为该弹种并升一级；其他弹种的等级原样保留
 function gainWeapon(t, note) {
@@ -1113,13 +1230,15 @@ function hurtPlayer() {
     if (g.hp <= 0) ghostDie();
     return;
   }
-  P.lives--; P.inv = 1.8; hurtFlash = .6; addShake(10);   // 受伤只扣命，火力等级保留
+  P.lives--; P.inv = 1.4; hurtFlash = .6; addShake(10);   // 受伤只扣命；弹种等级在死亡（生命耗尽）时才清零
   Sfx.play('hurt'); vibrate([60, 30, 60]);
   explode(P.x, P.y, '255,120,100', 14, 200);
   if (P.lives <= 0) enterSoul();
 }
 function enterSoul() {
-  P.mode = 'soul'; P.lives = 0; P.soulE = 100; P.ghost = null; P.inv = 0; P.extra = 0; P.od = 0;   // 各弹种等级 P.wl 保留
+  P.mode = 'soul'; P.lives = 0; P.soulE = 100; P.ghost = null; P.inv = 0; P.extra = 0; P.od = 0;
+  P.wl = { normal: 1, laser: 0, lock: 0, blast: 0 }; P.wt = 'normal'; P.pod = 0;   // 死亡惩罚：弹种等级和导弹吊舱清零
+  popup(P.x, P.y - 40, '弹种等级清零', '#ff9a9a', 14, 1.6);
   P.vx = P.vy = 0;
   explode(P.x, P.y, '255,140,90', 44, 330); addShake(16); whiteFlash = .55;
   Sfx.play('bigboom'); Sfx.play('soul'); vibrate([100, 50, 200]);
@@ -1150,7 +1269,7 @@ function possess(e) {
 }
 function revive() {
   if (P.mode === 'possessed') explode(P.x, P.y, SKILL[P.ghost.type].rgb, 24, 240);
-  P.mode = 'ship'; P.lives = 2; P.extra = 0; P.ghost = null; P.od = 0;   // 各弹种等级 P.wl 保留
+  P.mode = 'ship'; P.lives = 2; P.extra = 0; P.ghost = null; P.od = 0;
   P.shield = Math.max(P.shield, 4); P.inv = 2; P.soulE = 100;
   for (let i = 0; i < 3; i++) rings.push({ x: P.x, y: P.y, r: 6, grow: 170 + i * 80, life: -i * .08, max: .55, rgb: '255,230,140', w: 3 });
   whiteFlash = .5; Sfx.play('revive'); vibrate(80);
@@ -1260,7 +1379,7 @@ function nearestEnemy(x, y) {
   for (const e of enemies) { if (!validTarget(e)) continue; const d = (e.x - x) * (e.x - x) + (e.y - y) * (e.y - y); if (d < bd) { bd = d; best = e; } }
   return best;
 }
-function validTarget(e) { return !!e && !e.dead && e.y > -8 && e.y < H + 8 && e.x > -8 && e.x < W + 8; }
+function validTarget(e) { return !!e && !e.dead && !e.cloaked && e.y > -8 && e.y < H + 8 && e.x > -8 && e.x < W + 8; }
 function pickTargets(n) {   // 离机体最近的 n 个目标，锁定弹逐发分配
   const c = enemies.filter(validTarget).sort((a, b) => (a.x - P.x) ** 2 + (a.y - P.y) ** 2 - ((b.x - P.x) ** 2 + (b.y - P.y) ** 2));
   return c.slice(0, n);
@@ -1275,7 +1394,7 @@ function playerFire() {
       setFireCd(.17 / boost);
       for (const s of pat) {
         const a = s[1] * Math.PI / 180;
-        bullets.push({ x: P.x + s[0], y: P.y - 26, vx: Math.sin(a) * 640, vy: -Math.cos(a) * 640, r: 4, dmg: 1, pierce: 0, rgb: PLAYER_RGB, dead: false, last: null, a });
+        bullets.push({ x: P.x + s[0], y: P.y - 26, vx: Math.sin(a) * 640, vy: -Math.cos(a) * 640, r: 4, dmg: 1.25, pierce: 0, rgb: PLAYER_RGB, dead: false, last: null, a });
         list.push([s[0], 0]);
       }
       P.muzSpr = null; Sfx.play('shoot');
@@ -1291,7 +1410,7 @@ function playerFire() {
       const n = LOCKW.n[li], tg = pickTargets(n);
       for (let i = 0; i < n; i++) {
         const c = i - (n - 1) / 2, a = c * .3, dx = c * 7;
-        bullets.push({ kind: 'lock', x: P.x + dx, y: P.y - 24, vx: Math.sin(a) * 470, vy: -Math.cos(a) * 470, r: 4, dmg: 1, pierce: 0, rgb: '110,255,160', dead: false, last: null, a,
+        bullets.push({ kind: 'lock', x: P.x + dx, y: P.y - 24, vx: Math.sin(a) * 470, vy: -Math.cos(a) * 470, r: 4, dmg: LOCKW.dmg[li], pierce: 0, rgb: '110,255,160', dead: false, last: null, a,
           homing: true, target: tg.length ? tg[i % tg.length] : null, turn: LOCKW.turn[li], life: 2.2, age: 0 });
         list.push([dx, 0]);
       }
@@ -1364,7 +1483,11 @@ function killEnemy(e) {
   } else {
     explode(e.x, e.y, def.rgb, Math.round(10 + def.r * .7), 150 + def.r * 4);
     Sfx.play(def.sfx);
-    if (e.type === 2 || e.type === 9) addShake(5);
+    if (e.type === 2 || e.type === 9 || e.type === 12) addShake(5);
+    if (e.type === 10 && !e.noSplit) {   // 分裂机：裂成两架侦察机
+      for (const sd of [-1, 1]) spawnEnemy({ type: 0, x: clamp(e.x + sd * 20, 14, W - 14), y: e.y, ai: 'sine', vy: 105, amp: 26, f: 2.4, ph: sd > 0 ? 0 : Math.PI, noSplit: true });
+      Sfx.play('split');
+    }
     if (P.mode === 'possessed' && Math.random() < .07) spawnPowerup(e.x, e.y, 'life'); else dropFor(e);
   }
 }
@@ -1420,7 +1543,7 @@ function updateBullets(dt) {
     // 扫掠碰撞：检测本帧经过的整条线段，高速弹（激光）和低帧率下也不会穿过敌机
     const sp = Math.hypot(b.vx, b.vy) || 1, tx = px - b.vx / sp * len, ty = py - b.vy / sp * len;
     for (const e of enemies) {
-      if (e.dead || e.y < -16) continue;
+      if (e.dead || e.y < -16 || e.cloaked) continue;
       if (b.kind === 'laser' ? b.hits.includes(e) : b.last === e) continue;
       const rr = e.r + b.r;
       if (segDist2(e.x, e.y, b.x, b.y, tx, ty) < rr * rr) {
@@ -1448,6 +1571,22 @@ function updateEnemies(dt) {
   for (const e of enemies) {
     if (e.dead) continue;
     e.age += dt; e.hitT = Math.max(0, e.hitT - dt); e.flashT = Math.max(0, e.flashT - dt); if (e.lockT) e.lockT = Math.max(0, e.lockT - dt); if (e.shieldT) e.shieldT = Math.max(0, e.shieldT - dt);
+    if (e.type === 11) {   // 隐形机：隐身 / 现身循环，现身后扇形齐射
+      e.ct -= dt;
+      if (e.cloaked) { e.alpha = Math.max(.07, e.alpha - dt * 3); if (e.ct <= 0) { e.cloaked = false; e.ct = 1.8; e.fired = false; Sfx.play('decloak'); } }
+      else {
+        e.alpha = Math.min(1, e.alpha + dt * 4);
+        if (!e.fired && e.ct < 1.2 && e.y > 10 && P.mode !== 'dead') { e.fired = true; e.flashT = .09; Sfx.play('eshoot'); for (let i = -2; i <= 2; i++) aimEB(e.x, e.y + 12, 185 * diffK(), i * .2, 5, '150,160,255'); }
+        if (e.ct <= 0) { e.cloaked = true; e.ct = 2.1; Sfx.play('cloak'); }
+      }
+    } else if (e.type === 12 && e.y > 30 && P.mode !== 'dead') {   // 旋涡机：周期性喷出双臂螺旋弹幕
+      e.ct -= dt;
+      if (e.ct <= 0) { e.bn = 14; e.ct = 3.2 - Math.min(wave * .05, 1); }
+      if (e.bn > 0 && (e.bt2 -= dt) <= 0) {
+        e.bt2 = .09; e.bn--; e.sa += .42; Sfx.play('spiral');
+        for (const o of [0, Math.PI]) spawnEB(e.x, e.y, Math.cos(e.sa + o) * 125 * diffK(), Math.sin(e.sa + o) * 125 * diffK(), 4.5, '255,150,60');
+      }
+    }
     switch (e.ai) {
       case 'sine':
         e.y += e.vy * dt; e.x = e.x0 + Math.sin(e.age * e.f + e.ph) * e.amp; e.vx = Math.cos(e.age * e.f + e.ph) * e.amp * e.f; break;
@@ -1476,7 +1615,7 @@ function updateEnemies(dt) {
         if (e.phase === 0) { e.y += 70 * dt; if (e.y >= 112) { e.phase = 1; e.pt = 0; } }
         else {
           e.pt += dt; e.x = W / 2 + Math.sin(e.pt * .55) * (W / 2 - 78); e.y = 112 + Math.sin(e.pt * 1.1) * 10;
-          e.bt -= dt; if (e.bt <= 0) bossAttack(e);
+          e.bt -= dt * 1.25; if (e.bt <= 0) bossAttack(e);
           if (e.hp < e.maxHp * .5) { e.rt -= dt; if (e.rt <= 0) { e.rt = .6; spawnEB(e.x - 44, e.y + 34, 0, 210, 5, '255,130,90'); spawnEB(e.x + 44, e.y + 34, 0, 210, 5, '255,130,90'); } }
         }
         break;
@@ -1490,7 +1629,7 @@ function updateEnemies(dt) {
           if (e.pt < .75) e.aim = Math.atan2(P.y - e.y, P.x - e.x);
           e.rot = e.aim + Math.PI / 2;
           if (e.pt >= .95) {
-            const k = 1 + Math.min(wave, 20) * .02, mx = e.x + Math.cos(e.aim) * (e.r + 10), my = e.y + Math.sin(e.aim) * (e.r + 10);
+            const k = diffK(), mx = e.x + Math.cos(e.aim) * (e.r + 10), my = e.y + Math.sin(e.aim) * (e.r + 10);
             spawnEB(mx, my, Math.cos(e.aim) * 500 * k, Math.sin(e.aim) * 500 * k, 6, '255,80,80', { kind: 'snipe' });
             spark(mx, my, '255,140,140', 7); Sfx.play('snipe'); addShake(1.5);
             e.shots++; e.pt = 0;
@@ -1498,6 +1637,14 @@ function updateEnemies(dt) {
             else { e.phase = 1; e.cd = 1.7 - Math.min(wave * .04, .6); }
           }
         } else { e.x += e.vx * dt; e.y += 25 * dt; }
+        break;
+      case 'charge':  // 冲锋舰：在屏幕一侧对准玩家高度（红线预警），随后横向高速冲撞
+        if (e.phase === 0) {
+          e.pt += dt; e.x += ((e.dirv > 0 ? 16 : W - 16) - e.x) * Math.min(1, dt * 5);
+          if (e.pt < .95) e.y += clamp(P.y - e.y, -260 * dt, 260 * dt);
+          e.rot = e.dirv > 0 ? Math.PI / 2 : -Math.PI / 2;
+          if (e.pt >= 1.3) { e.phase = 1; e.vx = e.dirv * 560; Sfx.play('dash'); }
+        } else e.x += e.vx * dt;
         break;
       case 'mine':    // 布雷机：横穿屏幕，沿途投放水雷
         e.vx = e.dirv * 62; e.x += e.vx * dt; e.y = e.ty + Math.sin(e.age * 2.2) * 5;
@@ -1624,6 +1771,16 @@ function compact(arr, pred) {
   arr.length = j;
 }
 
+let soulIdle = 0;
+function soulRescue(dt) {   // 灵魂形态下场上没有可夺舍的敌机（例如只剩 Boss）时，敌方会派来增援，保证总有夺舍机会
+  if (P.mode !== 'soul') { soulIdle = 0; return; }
+  if (enemies.some(e => !e.dead && e.type !== 4 && e.y < H - 40)) { soulIdle = 0; return; }
+  if ((soulIdle += dt) < 1.6) return;
+  soulIdle = -2.5;
+  const s0 = Math.random() < .5 ? -1 : 1, ty = wave >= 4 && Math.random() < .5 ? 1 : 0;
+  for (let i = 0; i < 3; i++) spawnEnemy({ type: ty, x: W / 2 + s0 * (i - 1) * 70, y: -30 - i * 26, ai: 'sine', vy: 95, amp: 30, f: 1.3, ph: i });
+  popup(W / 2, safeTop + 170, '敌方增援出现，夺舍它！', '#8ff0ff', 15, 1.8); Sfx.play('alarm');
+}
 let debugNoWaves = false;   // 仅调试用：暂停刷怪
 function updateWave(dt) {
   if (debugNoWaves) return;
@@ -1649,7 +1806,7 @@ function update(dt) {
   if (state !== 'playing' && state !== 'over') return;
   if (resumeT > 0) { resumeT -= dt; return; }
   gameTime += dt;
-  if (state === 'playing') updateWave(dt);
+  if (state === 'playing') { updateWave(dt); soulRescue(dt); }
   updatePlayer(dt);
   updateBullets(dt); updateEnemies(dt); updateEBullets(dt); updateNovas(dt); updatePowerups(dt);
   updateFx(dt);
@@ -1675,7 +1832,14 @@ function drawPowerups(t) {
     put(sprPU[p.kind], p.x, p.y, s);
   }
 }
-function drawEnemyExtras(e, t) {   // 新敌机的特效：瞄准线 / 激光预警与光束 / 护盾泡
+function drawEnemyExtras(e, t) {   // 新敌机的特效：瞄准线 / 激光预警与光束 / 护盾泡 / 冲锋预警
+  if (e.ai === 'charge' && e.phase === 0) {
+    const k = clamp(e.pt / 1.3, 0, 1), last = e.pt >= .95;
+    ctx.save(); ctx.globalCompositeOperation = 'lighter';
+    ctx.fillStyle = last ? 'rgba(255,255,255,' + (.35 + .3 * Math.sin(t * 60)) + ')' : 'rgba(255,70,50,' + (.1 + .3 * k) + ')';
+    ctx.fillRect(0, e.y - 2 - 9 * k, W, 4 + 18 * k);
+    ctx.restore();
+  }
   if (e.ai === 'snipe' && e.phase === 2) {
     const k = clamp(e.pt / .95, 0, 1), last = e.pt >= .75;
     const sx = e.x + Math.cos(e.aim) * (e.r + 8), sy = e.y + Math.sin(e.aim) * (e.r + 8);
@@ -1718,7 +1882,7 @@ function drawEnemies(t) {
     const spr = sprEnemy[e.type];
     // 尾焰
     ctx.globalCompositeOperation = 'lighter';
-    drawGlow(ET[e.type].rgb, e.x, e.y - e.r * .9, e.r * .8, .55 + Math.sin(t * 25 + e.x) * .15);
+    drawGlow(ET[e.type].rgb, e.x, e.y - e.r * .9, e.r * .8, (.55 + Math.sin(t * 25 + e.x) * .15) * e.alpha);
     // 枪口闪光
     if (e.flashT > 0 && e.ai !== 'dive') {
       ctx.globalAlpha = clamp(e.flashT / .09, 0, 1);
@@ -1728,6 +1892,7 @@ function drawEnemies(t) {
     ctx.globalAlpha = 1; ctx.globalCompositeOperation = 'source-over';
     const bank = (e.ai === 'arc' || e.ai === 'dive') ? 0 : clamp((e.vx || 0) / 260, -.35, .35);
     ctx.save(); ctx.translate(e.x, e.y); ctx.rotate(e.rot - bank);
+    if (e.alpha < 1) ctx.globalAlpha = e.alpha;
     put(spr, 0, 0, 1);
     if (e.hitT > 0 || (e.ai === 'dive' && e.phase === 1)) {
       ctx.globalCompositeOperation = 'lighter'; ctx.globalAlpha = e.ai === 'dive' ? .5 + Math.sin(t * 40) * .3 : .75; put(spr, 0, 0, 1);
@@ -2026,6 +2191,7 @@ function draw(t) {
  *  控件 UI 同步
  * ===================================================================== */
 let uiB = -1, uiA = -1, uiAT = '', uiBT = '';
+let btnGeo = null;
 function updateControlsUI() {
   const soul = P.mode === 'soul';
   const q = Math.round((soul ? 0 : P.energy) / 100 * 100);
@@ -2042,6 +2208,12 @@ function updateControlsUI() {
   if (aq !== uiA) { btnA.style.setProperty('--p', aq / 50); uiA = aq; }
   btnA.classList.toggle('locked', input.aLock);
   btnA.classList.toggle('dim', soul);
+  // 飞机在按钮下方时，按钮进一步变透明
+  if (!btnGeo && state === 'playing') {
+    const g = gameEl.getBoundingClientRect();
+    btnGeo = [btnA, btnB].map(el => { const r = el.getBoundingClientRect(); return { el, x: (r.left + r.width / 2 - g.left) / scale, y: (r.top + r.height / 2 - g.top) / scale, r: r.width / 2 / scale }; });
+  }
+  if (btnGeo) for (const b of btnGeo) b.el.classList.toggle('ghost', P.mode !== 'dead' && Math.hypot(P.x - b.x, P.y - b.y) < b.r + 34);
   const at = input.aLock ? '锁定' : '射击';
   if (at !== uiAT) { btnA.querySelector('small').textContent = at; uiAT = at; }
 }
@@ -2135,7 +2307,7 @@ function resize() {
   if (!nebula || Math.abs(oldH - H) > 1) { buildNebula(); buildStars(); }
   P.y = clamp(P.y, 0, maxY()); vigKey = '';
 }
-addEventListener('resize', resize);
+addEventListener('resize', () => { btnGeo = null; resize(); });
 addEventListener('orientationchange', () => setTimeout(resize, 200));
 
 let lastT = performance.now();
