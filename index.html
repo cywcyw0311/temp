@@ -106,10 +106,16 @@ button{font-family:inherit}
 .btn:active{transform:scale(.97);filter:brightness(1.15)}
 .btn.sm{padding:calc(var(--u)*10) 0;font-size:calc(var(--u)*14)}
 .row{display:flex;gap:calc(var(--u)*10)}
-.tips{list-style:none;margin:calc(var(--u)*16) 0 0;padding:calc(var(--u)*12) calc(var(--u)*12);text-align:left;font-size:calc(var(--u)*12.5);line-height:1.7;
+.tips{list-style:none;margin:calc(var(--u)*10) 0 0;padding:calc(var(--u)*9) calc(var(--u)*11);text-align:left;font-size:calc(var(--u)*11.5);line-height:1.5;
   color:#aebfe6;background:rgba(255,255,255,.05);border-radius:calc(var(--u)*12)}
 .tips b{color:#ffd24a}
 .tips li.soul b{color:#8ff0ff}
+.diff{display:flex;gap:calc(var(--u)*6);margin-bottom:calc(var(--u)*6)}
+.diff button{flex:1;padding:calc(var(--u)*9) 0;border-radius:calc(var(--u)*11);font-weight:800;font-size:calc(var(--u)*14.5);color:#c7d6f6;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.18);touch-action:manipulation}
+.diff button.on{color:#fff;background:linear-gradient(180deg,#4f8cff,#2f55d8);border-color:#a9c6ff;box-shadow:0 0 14px rgba(80,140,255,.5)}
+.diff button[data-d="easy"].on{background:linear-gradient(180deg,#3fd08a,#1f8f5a);border-color:#b4ffd9;box-shadow:0 0 14px rgba(60,220,140,.45)}
+.diff button[data-d="hard"].on{background:linear-gradient(180deg,#ff6a6a,#c2253a);border-color:#ffc0c0;box-shadow:0 0 14px rgba(255,80,90,.5)}
+.diffnote{font-size:calc(var(--u)*11.5);color:#9fb4e6;margin-bottom:calc(var(--u)*4);min-height:calc(var(--u)*15)}
 .best{margin-top:calc(var(--u)*12);font-size:calc(var(--u)*13);color:#9fb4e6}
 .best b{color:#ffd24a;font-size:calc(var(--u)*16)}
 .big{font-size:calc(var(--u)*46);font-weight:900;color:#fff;margin:calc(var(--u)*6) 0 0;font-variant-numeric:tabular-nums;text-shadow:0 0 22px rgba(120,170,255,.6)}
@@ -155,6 +161,10 @@ ol.list li.empty{display:block;text-align:center;color:#7f93c4;padding:calc(var(
     <div class="card">
       <h1>星际突击</h1>
       <div class="eng">STAR RAID</div>
+      <div class="diff" id="diffSel" role="group" aria-label="难度">
+        <button data-d="easy">简单</button><button data-d="normal">中等</button><button data-d="hard">困难</button>
+      </div>
+      <div class="diffnote" id="diffNote"></div>
       <button class="btn primary" id="startBtn">开始游戏</button>
       <button class="btn" id="menuScoresBtn">高分榜</button>
       <div class="best">最高分 <b id="menuBest">0</b></div>
@@ -350,9 +360,25 @@ try {
 } catch (e) {}
 const saveScores = () => { try { localStorage.setItem(SC_KEY, JSON.stringify(scores)); } catch (e) {} };
 const bestScore = () => scores.length ? scores[0].s : 0;
+// 难度档位：开始游戏前在主菜单选择
+const DIFFS = {
+  easy:   { name: '简单', hp: .7,  spd: .78, ivl: 1.45, groups: -1, boss: .5,  bossRate: .85, drop: 1.5, pity: 7,  lives: 5, inv: 2.0, scout2: 99, note: '5 条命 · 敌机更脆、子弹更慢 · 掉落更多' },
+  normal: { name: '中等', hp: .85, spd: .9,  ivl: 1.2,  groups: 0,  boss: .72, bossRate: 1.05, drop: 1.2, pity: 9,  lives: 4, inv: 1.7, scout2: 9,  note: '4 条命 · 标准强度' },
+  hard:   { name: '困难', hp: 1,   spd: 1,   ivl: 1,    groups: 1,  boss: 1,   bossRate: 1.25, drop: 1,   pity: 11, lives: 3, inv: 1.4, scout2: 6,  note: '3 条命 · 敌机更多更硬、子弹更快' }
+};
+let diffKey = 'normal';
+try { const k = localStorage.getItem('starraid.diff'); if (DIFFS[k]) diffKey = k; } catch (e) {}
+let D = DIFFS[diffKey];
+function setDiff(k) {
+  if (!DIFFS[k]) return;
+  diffKey = k; D = DIFFS[k];
+  try { localStorage.setItem('starraid.diff', k); } catch (e) {}
+  document.querySelectorAll('#diffSel button').forEach(b => b.classList.toggle('on', b.dataset.d === k));
+  $('diffNote').textContent = D.note;
+}
 function submitScore(s, w) {
   if (s <= 0) return { entry: null, rank: -1 };
-  const entry = { s, w, d: Date.now() };
+  const entry = { s, w, d: Date.now(), df: diffKey };
   scores.push(entry);
   scores.sort((a, b) => b.s - a.s || a.d - b.d);
   scores = scores.slice(0, 10);
@@ -367,7 +393,7 @@ function renderScores(el, limit, hl) {
   scores.slice(0, limit).forEach((e, i) => {
     const li = document.createElement('li');
     if (e === hl) li.className = 'me';
-    li.innerHTML = '<b>' + (i + 1) + '</b><span class="sc">' + e.s + '</span><span class="wv">第' + e.w + '波</span><span class="dt">' + fmtDate(e.d) + '</span>';
+    li.innerHTML = '<b>' + (i + 1) + '</b><span class="sc">' + e.s + '</span><span class="wv">' + (DIFFS[e.df] ? DIFFS[e.df].name + ' ' : '') + '第' + e.w + '波</span><span class="dt">' + fmtDate(e.d) + '</span>';
     el.appendChild(li);
   });
 }
@@ -1064,7 +1090,7 @@ function buildWave(n) {
     pat.stream(6, 0); pat.stream(16, 1);
     if (n >= 10) pat.dive(11);
   } else {
-    const groups = n < 2 ? 2 : n < 5 ? 3 : n < 9 ? 4 : 5;
+    const groups = Math.max(2, (n < 2 ? 2 : n < 5 ? 3 : n < 9 ? 4 : 5) + D.groups);
     const pool = [() => pat.stream(t, n >= 6 && Math.random() < .4 ? 1 : 0), () => pat.line(t, 0)];
     if (n >= 2) pool.push(() => pat.vee(t, 1), () => pat.stream(t, 1));
     if (n >= 3) pool.push(() => pat.dive(t), () => pat.hover(t, 1, 2));
@@ -1094,9 +1120,9 @@ function buildWave(n) {
 function spawnEnemy(ev) {
   const def = ET[ev.type];
   let hp = def.hp;
-  if (ev.type >= 1 && ev.type !== 4) hp = Math.ceil(hp * 1.25) + Math.max(0, Math.floor((wave - 1) / 3));
-  else if (ev.type === 0 && wave >= 6) hp = 2;
-  if (ev.type === 4) hp = 220 + 130 * (wave / 5 - 1);
+  if (ev.type >= 1 && ev.type !== 4) hp = Math.ceil((hp * 1.25 + Math.max(0, Math.floor((wave - 1) / 3))) * D.hp);
+  else if (ev.type === 0 && wave >= D.scout2) hp = 2;
+  if (ev.type === 4) hp = Math.round((220 + 130 * (wave / 5 - 1)) * D.boss);
   // 狙击机(5)、布雷机(6)、激光舰(9) 由各自的 AI 负责攻击，不走通用射击
   const shoots = ev.type === 1 || ev.type === 2 || ev.type === 7 || ev.type === 8 || (ev.type === 0 && wave >= 2) || ev.type === 4 || ev.type === 10;
   const iv = ev.type === 1 ? 2.1 : ev.type === 2 ? 2.5 : ev.type === 0 ? 3.4 : ev.type === 7 ? 2.4 : ev.type === 8 ? 3.1 : ev.type === 6 ? 1.2 : ev.type === 10 ? 2.2 : 99;
@@ -1105,7 +1131,7 @@ function spawnEnemy(ev) {
     type: ev.type, x: ev.x, y: ev.y, x0: ev.x, vx: 0, vy: ev.vy || 0, r: def.r, age: 0, hitT: 0, flashT: 0, phase: 0, pt: 0, dead: false,
     hp, maxHp: hp, ai: ev.ai, th: ev.th || 0, om: ev.om || 0, sp: ev.sp || 0, amp: ev.amp || 0, f: ev.f || 1, ph: ev.ph || 0,
     ty: ev.ty || 120, hoverT: ev.hoverT || 6, rot: Math.PI, shoots,
-    ivl: Math.max(.7, iv * .85 - Math.min(wave * .06, 1.1)), fireT: rand(.8, 2), bt: 1.2, rt: .5, pat: 0,
+    ivl: Math.max(.7, iv * .85 - Math.min(wave * .06, 1.1)) * D.ivl, fireT: rand(.8, 2), bt: 1.2, rt: .5, pat: 0,
     alpha: 1, cloaked: false, ct: rand(1, 2), fired: false, bn: 0, bt2: 0, sa: rand(0, TAU), noSplit: !!ev.noSplit,
     shield: sh, maxShield: sh, shieldT: 0, dirv: ev.dirv || 1, cd: ev.cd || 1.2, shots: 0, cycles: 0, sw: 0, aim: Math.PI / 2
   });
@@ -1122,7 +1148,7 @@ function aimEB(x, y, speed, off, r, rgb) {
   const a = Math.atan2(P.y - y, P.x - x) + (off || 0);
   spawnEB(x, y, Math.cos(a) * speed, Math.sin(a) * speed, r, rgb);
 }
-const diffK = () => 1.12 + Math.min(wave, 25) * .028;   // 敌弹速度随波次提升
+const diffK = () => (1.12 + Math.min(wave, 25) * .028) * D.spd;   // 敌弹速度随波次提升
 function enemyShoot(e) {
   const k = diffK();
   e.flashT = .09;
@@ -1173,9 +1199,9 @@ function spawnPowerup(x, y, kind) {
   powerups.push({ x, y, x0: x, vy: 62, kind, t: 0, dead: false });
 }
 function dropFor(e) {
-  const chance = [.07, .13, .38, .1, 1, .18, .24, .28, .26, .42, .26, .26, .36, .26][e.type];
+  const chance = [.1, .18, .5, .14, 1, .25, .32, .38, .35, .55, .35, .35, .48, .35][e.type] * D.drop;
   pity++;
-  if (Math.random() < chance || pity >= 13) { pity = 0; spawnPowerup(e.x, e.y); }
+  if (Math.random() < chance || pity >= D.pity) { pity = 0; spawnPowerup(e.x, e.y); }
 }
 // 拾取弹种：切换为该弹种并升一级；其他弹种的等级原样保留
 function gainWeapon(t, note) {
@@ -1230,7 +1256,7 @@ function hurtPlayer() {
     if (g.hp <= 0) ghostDie();
     return;
   }
-  P.lives--; P.inv = 1.4; hurtFlash = .6; addShake(10);   // 受伤只扣命；弹种等级在死亡（生命耗尽）时才清零
+  P.lives--; P.inv = D.inv; hurtFlash = .6; addShake(10);   // 受伤只扣命；弹种等级在死亡（生命耗尽）时才清零
   Sfx.play('hurt'); vibrate([60, 30, 60]);
   explode(P.x, P.y, '255,120,100', 14, 200);
   if (P.lives <= 0) enterSoul();
@@ -1615,7 +1641,7 @@ function updateEnemies(dt) {
         if (e.phase === 0) { e.y += 70 * dt; if (e.y >= 112) { e.phase = 1; e.pt = 0; } }
         else {
           e.pt += dt; e.x = W / 2 + Math.sin(e.pt * .55) * (W / 2 - 78); e.y = 112 + Math.sin(e.pt * 1.1) * 10;
-          e.bt -= dt * 1.25; if (e.bt <= 0) bossAttack(e);
+          e.bt -= dt * D.bossRate; if (e.bt <= 0) bossAttack(e);
           if (e.hp < e.maxHp * .5) { e.rt -= dt; if (e.rt <= 0) { e.rt = .6; spawnEB(e.x - 44, e.y + 34, 0, 210, 5, '255,130,90'); spawnEB(e.x + 44, e.y + 34, 0, 210, 5, '255,130,90'); } }
         }
         break;
@@ -2097,7 +2123,7 @@ function drawHUD(t) {
   ctx.font = '800 24px ' + FONT; ctx.fillStyle = '#fff'; ctx.fillText(String(score).padStart(6, '0'), x0, y0 + 10);
   ctx.textAlign = 'right';
   ctx.font = '700 10px ' + FONT; ctx.fillStyle = 'rgba(170,200,255,.75)'; ctx.fillText('BEST ' + Math.max(bestScore(), score), W - 62, y0 + 2);
-  ctx.font = '800 15px ' + FONT; ctx.fillStyle = '#ffd24a'; ctx.fillText('第 ' + Math.max(1, wave) + ' 波', W - 62, y0 + 16);
+  ctx.font = '800 15px ' + FONT; ctx.fillStyle = '#ffd24a'; ctx.fillText(D.name + ' · 第 ' + Math.max(1, wave) + ' 波', W - 62, y0 + 16);
 
   const y1 = y0 + 42;
   ctx.textAlign = 'left';
@@ -2228,7 +2254,7 @@ function resetWorld() {
   bullets.length = ebullets.length = enemies.length = powerups.length = particles.length = rings.length = popups.length = novas.length = later.length = 0;
   seenTypes = {}; score = 0; wave = 0; kills = 0; gameTime = 0; pity = 0; queue = []; waveState = 'pause'; waveT = 1.2; waveTime = 0;
   shake = hurtFlash = whiteFlash = 0; banner = null; resumeT = 0;
-  Object.assign(P, { x: W / 2, y: H - 190, vx: 0, vy: 0, tilt: 0, mode: 'ship', lives: 3, wt: 'normal', wl: { normal: 1, laser: 0, lock: 0, blast: 0 }, pod: 0,
+  Object.assign(P, { x: W / 2, y: H - 190, vx: 0, vy: 0, tilt: 0, mode: 'ship', lives: D.lives, wt: 'normal', wl: { normal: 1, laser: 0, lock: 0, blast: 0 }, pod: 0,
     podX: [W / 2, W / 2], podY: [H - 190, H - 190], podCd: [0, .5], extra: 0, shield: 0, speedT: 0, inv: 1.5,
     fireCd: 0, energy: 25, od: 0, ghost: null, soulE: 100, muz: 0, muzList: SHOTS[1], muzSpr: null, trailT: 0, wispT: 0 });
   input.aLock = false; input.aIgnore = false;
@@ -2270,6 +2296,8 @@ function openScores(from) {
 }
 
 $('startBtn').onclick = startGame;
+$('diffSel').addEventListener('click', e => { const b = e.target.closest('button'); if (b) { setDiff(b.dataset.d); Sfx.init(); Sfx.play('click'); } });
+setDiff(diffKey);
 $('menuScoresBtn').onclick = () => openScores('menu');
 $('pauseBtn').onclick = pauseGame;
 $('resumeBtn').onclick = resumeGame;
@@ -2330,6 +2358,7 @@ if (/[?&]debug/.test(location.search)) {
     enemies, bullets, ebullets, powerups, particles, spawnEnemy, spawnPowerup, startGame, pauseGame, resumeGame, enterSoul, hurtPlayer, endGame,
     setScore: v => { score = v; }, setWave: v => { wave = v; waveState = 'pause'; waveT = .1; }, killEnemy, useSkill,
     Sfx, SKILL, ET, get hurtFlash() { return hurtFlash; }, get shake() { return shake; },
+    setDiff, get diff() { return diffKey; },
     noWaves: v => { debugNoWaves = v; }, clearEnemies: () => { enemies.forEach(e => e.dead = true); queue.length = 0; }
   };
 }
