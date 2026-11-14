@@ -167,6 +167,14 @@ ol.list li.empty{display:block;text-align:center;color:#7f93c4;padding:calc(var(
 .row3{display:flex;gap:calc(var(--u)*7);margin-top:calc(var(--u)*9)}
 .row3 .btn{margin:0;padding:calc(var(--u)*9) 0;font-size:calc(var(--u)*13);letter-spacing:.04em}
 .panel .best{margin-top:calc(var(--u)*9)}
+#win.overlay{background:rgba(4,6,20,.3);-webkit-backdrop-filter:none;backdrop-filter:none}
+.wincard{animation:pop .6s ease-out both;border-color:rgba(255,215,110,.6) !important;box-shadow:0 12px 50px rgba(0,0,0,.6),0 0 46px rgba(255,200,90,.35),inset 0 1px 0 rgba(255,255,255,.15) !important}
+.wincard h2{background:linear-gradient(180deg,#fff8d8,#ffd75a 55%,#ff9a3a);-webkit-background-clip:text;background-clip:text;color:transparent;filter:drop-shadow(0 0 16px rgba(255,200,90,.7))}
+.stars{display:flex;justify-content:center;gap:calc(var(--u)*10);margin-bottom:calc(var(--u)*4)}
+.stars i{font-style:normal;font-size:calc(var(--u)*40);line-height:1;color:rgba(160,175,215,.28)}
+.stars i.on{color:#ffd75a;text-shadow:0 0 18px rgba(255,205,90,.9);animation:starpop .55s ease-out both}
+@keyframes starpop{0%{transform:scale(0) rotate(-140deg);opacity:0}70%{transform:scale(1.35) rotate(10deg)}100%{transform:scale(1) rotate(0);opacity:1}}
+#winStats{line-height:1.6}
 #menu .author{bottom:calc(var(--u)*14 + env(safe-area-inset-bottom,0px))}
 </style>
 </head>
@@ -192,7 +200,7 @@ ol.list li.empty{display:block;text-align:center;color:#7f93c4;padding:calc(var(
   <!-- 登录（标题）界面 -->
   <div id="menu" class="overlay show">
     <div class="logo">
-      <span class="tag">3D 空战</span>
+      <span class="tag">3D 空战 · 20 关</span>
       <h1>星际突击</h1>
       <div class="en">STAR RAID</div>
     </div>
@@ -223,7 +231,8 @@ ol.list li.empty{display:block;text-align:center;color:#7f93c4;padding:calc(var(
         <li><b>A</b>　射击；<b>长按</b>锁定连发，<b>再按</b>解除</li>
         <li><b>B</b>　能量满后释放「星爆」：<b>秒杀全屏敌人</b>（Boss 除外）并清除敌弹，自己<b>无敌 3 秒</b></li>
         <li><b>弹种道具</b>　激光 / 锁定 / 爆破弹，拾取即切换，等级独立；<b>吊舱</b>附带跟踪导弹</li>
-        <li><b>关卡</b>　每 5 波一关，8 种场景和 Boss；地面的炮台、坦克可击毁也可飞越；击落<b>运输机</b>必掉两个道具；击败 Boss <b>三选一强化</b></li>
+        <li><b>关卡</b>　共 <b>20 关</b>，每关 2 波敌人加 1 个 Boss，场景和 Boss 各不相同；击败 Boss <b>三选一强化</b>，打完第 20 关即<b>通关</b></li>
+        <li><b>其他</b>　地面的炮台、坦克可击毁也可飞越；击落<b>运输机</b>必掉两个道具</li>
         <li><b>连击</b>　连续击毁敌机得分加倍；敌弹贴身掠过（擦弹）给星爆能量</li>
         <li class="soul"><b>阵亡</b>　化为灵魂，撞向敌机即可<b>夺舍</b>，获得它的速射技能；夺舍的飞机被击毁才消耗魂能；<b>死亡后弹种等级清零</b></li>
       </ul>
@@ -283,6 +292,25 @@ ol.list li.empty{display:block;text-align:center;color:#7f93c4;padding:calc(var(
   </div>
 
   <!-- 游戏结束 -->
+  <!-- 通关 -->
+  <div id="win" class="overlay">
+    <div class="card wincard">
+      <div class="stars" id="winStars"><i>★</i><i>★</i><i>★</i></div>
+      <h2>恭喜通关</h2>
+      <div class="eng">MISSION COMPLETE</div>
+      <div class="wave">20 关全部完成 · 星际霸主已被击败</div>
+      <div class="lbls">最终得分</div>
+      <div class="big" id="winScore">0</div>
+      <div class="wave" id="winStats"></div>
+      <div id="winBadge"></div>
+      <button class="btn primary" id="winAgainBtn">再来一局</button>
+      <div class="row">
+        <button class="btn sm" id="winScoresBtn">高分榜</button>
+        <button class="btn sm" id="winMenuBtn">返回登录界面</button>
+      </div>
+    </div>
+  </div>
+
   <div id="over" class="overlay">
     <div class="card">
       <h2>任务失败</h2>

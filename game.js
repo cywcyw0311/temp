@@ -185,9 +185,9 @@ function setDiff(k) {
   document.querySelectorAll('.diff button').forEach(b => b.classList.toggle('on', b.dataset.d === k));
   document.querySelectorAll('.diffnote').forEach(el => { el.textContent = D.note; });
 }
-function submitScore(s, w) {
+function submitScore(s, w, cleared) {
   if (s <= 0) return { entry: null, rank: -1 };
-  const entry = { s, w, d: Date.now(), df: diffKey };
+  const entry = { s, w, d: Date.now(), df: diffKey, st: stageOf(w) + 1, c: cleared ? 1 : 0 };
   scores.push(entry);
   scores.sort((a, b) => b.s - a.s || a.d - b.d);
   scores = scores.slice(0, 10);
@@ -202,7 +202,7 @@ function renderScores(el, limit, hl) {
   scores.slice(0, limit).forEach((e, i) => {
     const li = document.createElement('li');
     if (e === hl) li.className = 'me';
-    li.innerHTML = '<b>' + (i + 1) + '</b><span class="sc">' + e.s + '</span><span class="wv">' + (DIFFS[e.df] ? DIFFS[e.df].name + ' ' : '') + '第' + e.w + '波</span><span class="dt">' + fmtDate(e.d) + '</span>';
+    li.innerHTML = '<b>' + (i + 1) + '</b><span class="sc">' + e.s + '</span><span class="wv">' + (DIFFS[e.df] ? DIFFS[e.df].name + ' ' : '') + (e.c ? '通关' : e.st ? '第' + e.st + '关' : '第' + e.w + '波') + '</span><span class="dt">' + fmtDate(e.d) + '</span>';
     el.appendChild(li);
   });
 }
@@ -273,7 +273,19 @@ BOSSES.push(
   { name: '陆行堡垒', rgb: '255,190,90', hp: 1.3, ground: true },
   { name: '极寒守卫', rgb: '150,220,255', hp: 1.05 },
   { name: '熔岩炎龙', rgb: '255,120,50', hp: 1.5 },
-  { name: '雷霆战舰', rgb: '255,225,110', hp: 1.25 }
+  { name: '雷霆战舰', rgb: '255,225,110', hp: 1.25 },
+  { name: '晶簇女王', rgb: '120,240,255', hp: 1.15 },
+  { name: '沙海巨蝎', rgb: '255,170,90',  hp: 1.3, ground: true },
+  { name: '深海巨章', rgb: '200,120,255', hp: 1.35 },
+  { name: '极光巨鲸', rgb: '120,255,200', hp: 1.4 },
+  { name: '齿轮巨像', rgb: '255,190,80',  hp: 1.4 },
+  { name: '日月双子', rgb: '255,220,120', hp: 1.3 },
+  { name: '果冻王',   rgb: '120,255,160', hp: 1.25 },
+  { name: '镜面魔方', rgb: '90,230,255',  hp: 1.35 },
+  { name: '轨道炮台', rgb: '255,120,90',  hp: 1.4 },
+  { name: '黑洞核心', rgb: '190,120,255', hp: 1.45 },
+  { name: '幽灵舰长', rgb: '150,255,220', hp: 1.3, fade: true },
+  { name: '星际霸主', rgb: '255,90,90',   hp: 1.7, rageAt: .34, rageTxt: '最终形态！' }
 );
 
 const PU = {
@@ -331,17 +343,34 @@ Object.keys(PU).forEach(k => {
 });
 
 
-const STAGES = [
-  { name: '雪原冰川', ground: 'snow',   boss: 5, haze: '205,228,255', weather: 'snow',  cloud: '255,255,255' },
-  { name: '黄沙戈壁', ground: 'desert', boss: 4, haze: '255,226,170', weather: 'dust',  cloud: '255,240,210' },
-  { name: '碧海群岛', ground: 'ocean',  boss: 0, haze: '175,222,255', weather: 'none',  cloud: '255,255,255' },
-  { name: '赤霞峡谷', ground: 'canyon', boss: 7, haze: '255,170,150', weather: 'dust',  cloud: '255,200,176' },
-  { name: '翡翠丛林', ground: 'jungle', boss: 2, haze: '195,240,205', weather: 'none',  cloud: '240,255,245' },
-  { name: '熔岩火山', ground: 'lava',   boss: 6, haze: '255,120,60',  weather: 'ash',   cloud: '60,45,45' },
-  { name: '霓虹都市', ground: 'city',   boss: 3, haze: '70,90,190',   weather: 'rain',  cloud: '40,48,80' },
-  { name: '深空轨道', ground: null,     boss: 1 }
+const STAGES = [   // 20 关：场景各不相同，每关一个 Boss
+  { name: '雪原冰川', ground: 'snow',     boss: 5 },
+  { name: '樱花山谷', ground: 'sakura',   boss: 0 },
+  { name: '黄沙戈壁', ground: 'desert',   boss: 4 },
+  { name: '碧海群岛', ground: 'ocean',    boss: 7 },
+  { name: '糖果乐园', ground: 'candy',    boss: 14 },
+  { name: '翡翠丛林', ground: 'jungle',   boss: 2 },
+  { name: '赤霞峡谷', ground: 'canyon',   boss: 9 },
+  { name: '水晶洞窟', ground: 'crystal',  boss: 8 },
+  { name: '熔岩火山', ground: 'lava',     boss: 6 },
+  { name: '极光冰海', ground: 'aurora',   boss: 11 },
+  { name: '幽灵沼泽', ground: 'swamp',    boss: 18 },
+  { name: '深海遗迹', ground: 'undersea', boss: 10 },
+  { name: '云端天城', ground: 'cloud',    boss: 13 },
+  { name: '霓虹都市', ground: 'city',     boss: 3 },
+  { name: '钢铁工厂', ground: 'factory',  boss: 12 },
+  { name: '赛博网格', ground: 'cyber',    boss: 15 },
+  { name: '月面基地', ground: 'moon',     boss: 16 },
+  { name: '深空轨道', ground: null, sp: 'space', boss: 1 },
+  { name: '虚空裂隙', ground: null, sp: 'void',  boss: 17 },
+  { name: '霸主旗舰', ground: 'flagship', boss: 19 }
 ];
-const stageOf = n => Math.floor(Math.max(0, n - 1) / 5) % STAGES.length;
+const WPS = 3, NSTAGE = STAGES.length;   // 每关 3 波：2 波敌人 + 1 波 Boss
+const stageOf = n => Math.min(NSTAGE - 1, Math.floor(Math.max(0, n - 1) / WPS));
+const isBossWave = n => n > 0 && n % WPS === 0;
+// 难度等级：由关卡进度换算（从 1 逐步升到 26），敌机登场、血量、弹速都按它计算
+function levelOf(n) { const st = stageOf(n), j = (Math.max(1, n) - 1) % WPS; return isBossWave(n) ? Math.round(2 + st * 1.25) : 1 + Math.floor((st * 2 + j) * 25 / 39); }
+let DL = 1;
 
 const ET = [  // 敌机类型（sfx：被击毁时的爆炸音效）
   { name: '侦察机', r: 12, hp: 1,   score: 10,   rgb: '255,110,140', sfx: 'pop' },
@@ -416,7 +445,8 @@ const BASE_SPEED = 290, LOCK_MS = 480, MAX_LIVES = 5;
 
 /* ---- 状态 ---- */
 let state = 'menu';                      // menu | playing | paused | over
-let score = 0, wave = 0, kills = 0, gameTime = 0, pity = 0;
+let score = 0, wave = 0, kills = 0, gameTime = 0, pity = 0, deaths = 0;
+let vicT = 0, vicShown = false, vicRes = null, vicFw = 0, vicBonus = 0;   // 通关动画
 let waveState = 'pause', waveT = 0, waveTime = 0, queue = [];
 let resumeT = 0, shake = 0, hurtFlash = 0, whiteFlash = 0, banner = null, scoresFrom = 'menu';
 let combo = 0, comboT = 0, bestCombo = 0, grazes = 0, seenElite = false;
@@ -576,7 +606,8 @@ function addShake(v) { shake = Math.max(shake, v); }
 function buildWave(n) {
   const q = [];
   const side = () => Math.random() < .5 ? -1 : 1;
-  const bossWave = n % 5 === 0;
+  const bossWave = isBossWave(n), sIdx = stageOf(n);
+  n = levelOf(n);   // 以下的 n 都是难度等级
   const pat = {
     stream(t, type) {
       const s = side(), cnt = clamp(5 + Math.floor(n / 3), 5, 9), om = rand(.55, .9), y0 = rand(50, 100), sp = rand(165, 185);
@@ -691,8 +722,8 @@ function buildWave(n) {
   let t = .4;
   if (bossWave) {
     q.push({ t: 1, type: 4, x: W / 2, y: -90, ai: 'boss' });
-    pat.stream(6, 0); pat.stream(16, 1);
-    if (n >= 10) pat.dive(11);
+    pat.stream(7, 0); pat.stream(18, 1);
+    if (n >= 10) pat.dive(12);
   } else {
     const groups = Math.max(2, (n < 2 ? 2 : n < 5 ? 3 : n < 9 ? 4 : 5) + D.groups);
     const pool = [() => pat.stream(t, n >= 6 && Math.random() < .4 ? 1 : 0), () => pat.line(t, 0)];
@@ -721,7 +752,7 @@ function buildWave(n) {
     }
   }
   if (!bossWave && n >= 3 && (n === 3 || Math.random() < .3)) pat.cargo(rand(2, 7));   // 运输机：第 3 波必定出现，之后随机路过
-  if (STAGES[stageOf(n)].ground && !bossWave) {   // 地面场景：每波额外出现一批地面部队
+  if (STAGES[sIdx].ground && !bossWave) {   // 地面场景：每波额外出现一批地面部队
     const add = (gk, cnt) => { const t0 = rand(.5, 3); for (let i = 0; i < cnt; i++) q.push({ t: t0, type: gk, x: rand(40, W - 40), gd: i * 80 + rand(0, 40), amp: rand(30, 60), ph: rand(0, TAU) }); };
     add(19, clamp(2 + Math.floor(n / 5), 2, 4));
     if (n >= 3) add(20, n >= 12 ? 3 : 2);
@@ -736,26 +767,26 @@ function buildWave(n) {
 function spawnEnemy(ev) {
   const def = ET[ev.type], isBoss = ev.type === 4;
   // 精英：第 3 波起随机出现，更耐打、火力更密、必掉道具、得分 ×3
-  const elite = !isBoss && ev.type !== 18 && ev.type !== 15 && ev.type !== 24 && !ev.noSplit && (ev.elite !== undefined ? ev.elite : wave >= 3 && Math.random() < Math.min(.04 + wave * .007, .16));
+  const elite = !isBoss && ev.type !== 18 && ev.type !== 15 && ev.type !== 24 && !ev.noSplit && (ev.elite !== undefined ? ev.elite : DL >= 3 && Math.random() < Math.min(.04 + DL * .007, .16));
   let hp = def.hp;
-  if (ev.type === 15) hp = wave >= 10 ? 2 : 1;
+  if (ev.type === 15) hp = DL >= 10 ? 2 : 1;
   else if (ev.type === 18) hp = Math.ceil((ev.small ? 2 : 6) * D.hp);
-  else if (ev.type >= 1 && !isBoss) hp = Math.ceil((hp * 1.25 + Math.max(0, Math.floor((wave - 1) / 3))) * D.hp);
-  else if (ev.type === 0 && wave >= D.scout2) hp = 2;
+  else if (ev.type >= 1 && !isBoss) hp = Math.ceil((hp * 1.25 + Math.max(0, Math.floor((DL - 1) / 3))) * D.hp);
+  else if (ev.type === 0 && DL >= D.scout2) hp = 2;
   const bk = isBoss ? (ev.bk !== undefined ? ev.bk : STAGES[stageOf(wave)].boss) : 0;
   if (def.ground && !onGround()) return;   // 太空里没有地面单位
-  if (isBoss) hp = Math.round((370 + 210 * Math.max(0, wave / 5 - 1)) * D.boss * BOSSES[bk].hp);
+  if (isBoss) hp = Math.round((240 + 82 * stageOf(wave)) * D.boss * BOSSES[bk].hp);   // Boss 血量逐关略增
   if (elite) hp = Math.ceil(hp * 2.2);
   const sc = elite ? 1.22 : ev.small ? .58 : 1;
   // 狙击机(5)、布雷机(6)、激光舰(9) 等由各自的 AI 负责攻击，不走通用射击
-  const shoots = ev.type === 1 || ev.type === 2 || ev.type === 7 || ev.type === 8 || (ev.type === 0 && wave >= 2) || isBoss || ev.type === 10;
+  const shoots = ev.type === 1 || ev.type === 2 || ev.type === 7 || ev.type === 8 || (ev.type === 0 && DL >= 2) || isBoss || ev.type === 10;
   const iv = ev.type === 1 ? 2.1 : ev.type === 2 ? 2.5 : ev.type === 0 ? 3.4 : ev.type === 7 ? 2.4 : ev.type === 8 ? 3.1 : ev.type === 6 ? 1.2 : ev.type === 10 ? 2.2 : 99;
-  const sh = ev.type === 7 ? 6 + Math.floor(wave / 8) : 0;
+  const sh = ev.type === 7 ? 6 + Math.floor(DL / 8) : 0;
   enemies.push({
     type: ev.type, x: ev.x, y: ev.y, x0: ev.x, vx: ev.vx || 0, vy: ev.vy || 0, r: def.r * sc, age: 0, hitT: 0, flashT: 0, phase: 0, pt: 0, dead: false,
     hp, maxHp: hp, ai: ev.ai, th: ev.th || 0, om: ev.om || 0, sp: ev.sp || 0, amp: ev.amp || 0, f: ev.f || 1, ph: ev.ph || 0,
     ty: ev.ty || 120, hoverT: ev.hoverT || 6, rot: Math.PI, shoots,
-    ivl: Math.max(.7, iv * .85 - Math.min(wave * .06, 1.1)) * D.ivl * (elite ? .75 : 1), fireT: rand(.8, 2), bt: 1.2, rt: .5, pat: 0,
+    ivl: Math.max(.7, iv * .85 - Math.min(DL * .06, 1.1)) * D.ivl * (elite ? .75 : 1), fireT: rand(.8, 2), bt: 1.2, rt: .5, pat: 0,
     alpha: 1, cloaked: false, ct: rand(1, 2), fired: false, bn: 0, bt2: 0, sa: rand(0, TAU), noSplit: !!ev.noSplit,
     shield: sh, maxShield: sh, shieldT: 0, dirv: ev.dirv || 1, cd: ev.cd || 1.2, shots: 0, cycles: 0, sw: 0, aim: Math.PI / 2,
     sc, elite, bk, small: !!ev.small, vr: ev.vr || 0, healT: 0, healTarget: null, dashS: 0, pt2: 0, dashY: 0, ox: 0, tp: 2.5, raged: false, sa0: 0
@@ -764,7 +795,7 @@ function spawnEnemy(ev) {
     ne.ground = !!def.ground || (isBoss && !!BOSSES[bk].ground); ne.trail = []; ne.segs = null;
     if (def.ground) { ne.ai = 'ground'; const gp0 = R.planeToGround(ev.x, -50 - (ev.gd || 0) * .6); ne.wx = ne.wx0 = gp0[0]; ne.wz = gp0[1]; ne.ct = rand(1.2, 2.4); ne.y = -40; } }
   if (ev.type === 13) Sfx.play('snipeCharge');
-  if (isBoss) { showBanner('警告！', 'BOSS · ' + BOSSES[bk].name, '#ff6a8a', 2.6); Sfx.play('boss'); }
+  if (isBoss) { showBanner('警告！', 'BOSS · ' + BOSSES[bk].name, '#ff6a8a', 2.6); Sfx.play('boss'); const ne = enemies[enemies.length - 1]; if (BOSSX[bk] && BOSSX[bk].init) BOSSX[bk].init(ne); }
   else if (elite && !seenElite) { seenElite = true; popup(W / 2, safeTop + 150, '精英敌机 ★：更强，必掉道具', '#ffd75a', 15, 2.2); }
   else if (ev.type >= 5 && ev.type !== 18 && !seenTypes[ev.type]) { seenTypes[ev.type] = true; popup(W / 2, safeTop + 150, '新敌机：' + def.name, 'rgb(' + def.rgb + ')', 16, 1.9); }
 }
@@ -777,7 +808,7 @@ function aimEB(x, y, speed, off, r, rgb) {
   const a = Math.atan2(P.y - y, P.x - x) + (off || 0);
   spawnEB(x, y, Math.cos(a) * speed, Math.sin(a) * speed, r, rgb);
 }
-const diffK = () => (1.12 + Math.min(wave, 25) * .028) * D.spd;   // 敌弹速度随波次提升
+const diffK = () => (1.12 + Math.min(DL, 25) * .028) * D.spd;   // 敌弹速度随波次提升
 function enemyShoot(e) {
   const k = diffK();
   e.flashT = .09;
@@ -785,7 +816,7 @@ function enemyShoot(e) {
   const rgb = ET[e.type].rgb;
   if (e.type === 0) aimEB(e.x, e.y + e.r, 150 * k, 0, 5, rgb);
   else if (e.type === 1) {
-    if (wave >= 6) { spawnEB(e.x - 9, e.y + 12, 0, 200 * k, 5, rgb); spawnEB(e.x + 9, e.y + 12, 0, 200 * k, 5, rgb); }
+    if (DL >= 6) { spawnEB(e.x - 9, e.y + 12, 0, 200 * k, 5, rgb); spawnEB(e.x + 9, e.y + 12, 0, 200 * k, 5, rgb); }
     else spawnEB(e.x, e.y + 14, 0, 200 * k, 5, rgb);
   } else if (e.type === 2) { for (const o of [-.3, 0, .3]) aimEB(e.x, e.y + 16, 175 * k, o, 6, rgb); }
   else if (e.type === 10) { aimEB(e.x - 8, e.y + 12, 170 * k, -.08, 5, rgb); aimEB(e.x + 8, e.y + 12, 170 * k, .08, 5, rgb); }
@@ -802,11 +833,11 @@ function dropMine(e) {   // 布雷机投放水雷
 const BOSS_Y = 176;   // Boss 悬停高度：在顶部血条下方
 function updateBoss(e, dt) {
   if (e.phase === 0) { e.y += 90 * dt; if (e.y >= BOSS_Y) { e.phase = 1; e.pt = 0; } return; }
-  const rage = e.hp < e.maxHp * .5;
+  const rage = e.hp < e.maxHp * (BOSSES[e.bk].rageAt || .5), X = BOSSX[e.bk];
   if (rage && !e.raged) {   // 半血进入狂暴：出招更快，并解锁额外能力
-    e.raged = true; showBanner(BOSSES[e.bk].name, '进入狂暴状态！', '#ff6a6a', 1.8); whiteFlash = .35; addShake(8); Sfx.play('boss'); e.bt = Math.min(e.bt, .8);
+    e.raged = true; showBanner(BOSSES[e.bk].name, BOSSES[e.bk].rageTxt || '进入狂暴状态！', '#ff6a6a', 1.8); whiteFlash = .35; addShake(8); Sfx.play('boss'); e.bt = Math.min(e.bt, .8);
   }
-  if (e.alpha < 1) e.alpha = Math.min(1, e.alpha + dt * 2.5);
+  if (e.alpha < 1 && !X) e.alpha = Math.min(1, e.alpha + dt * 2.5);
   if (e.dashS) {   // 裂空者：对准玩家后俯冲，落点炸开一圈子弹，再返回
     e.pt2 += dt;
     if (e.dashS === 1) { e.x += clamp(P.x - e.x, -220 * dt, 220 * dt); e.flashT = .05; if (e.pt2 >= .8) { e.dashS = 2; e.dashY = clamp(P.y, 320, H - 150); Sfx.play('dash'); } }
@@ -817,8 +848,9 @@ function updateBoss(e, dt) {
     return;
   }
   e.pt += dt;
-  let tx; const ty = e.bk === 6 ? BOSS_Y + 24 + Math.sin(e.pt * 1.25) * (rage ? 95 : 65) : BOSS_Y + Math.sin(e.pt * 1.1) * 10;
-  if (e.bk === 1) {   // 织网者：狂暴后会瞬移
+  let tx, ty = e.bk === 6 ? BOSS_Y + 24 + Math.sin(e.pt * 1.25) * (rage ? 95 : 65) : BOSS_Y + Math.sin(e.pt * 1.1) * 10;
+  if (X) { const m = X.move(e, rage, dt); tx = m[0]; ty = m[1]; }
+  else if (e.bk === 1) {   // 织网者：狂暴后会瞬移
     if (rage && (e.tp -= dt) <= 0) { e.tp = 3.6; explode(e.x, e.y, '190,110,255', 14, 200); e.ox = rand(-60, 60); e.x = W / 2 + e.ox; e.alpha = .12; Sfx.play('decloak'); }
     tx = W / 2 + e.ox + Math.sin(e.pt * .5) * 42;
   } else if (e.bk === 2) tx = W / 2 + Math.sin(e.pt * .35) * (W / 2 - 92);
@@ -828,7 +860,11 @@ function updateBoss(e, dt) {
   else if (e.bk === 6) tx = W / 2 + Math.sin(e.pt * .8) * 128;
   else if (e.bk === 7) tx = W / 2 + Math.sin(e.pt * .42) * (W / 2 - 96);
   else tx = W / 2 + Math.sin(e.pt * .55) * (W / 2 - 78);
-  const k = Math.min(1, dt * 4); e.x += (tx - e.x) * k; e.y += (ty - e.y) * k; e.vx = 0;
+  const k = Math.min(1, dt * (X && X.snap || 4)); e.x += (tx - e.x) * k; e.y += (ty - e.y) * k; e.vx = 0;
+  if (X) {
+    if (X.tick) X.tick(e, dt, rage);
+    if (e.orb) { const o = e.orb; o.a += o.sp * dt; e.segs = []; for (let i = 0; i < o.n; i++) { const a = o.a + i * TAU / o.n; e.segs.push([e.x + Math.cos(a) * o.r, e.y + Math.sin(a) * o.r * .8]); } }   // 环绕体
+  }
   if (e.bk === 6) {   // 炎龙：身体各节沿着龙头走过的轨迹跟随
     const tr = e.trail; if (!tr.length || Math.hypot(tr[0][0] - e.x, tr[0][1] - e.y) > 6) { tr.unshift([e.x, e.y]); if (tr.length > 38) tr.pop(); }
     e.segs = []; for (let i = 4; i < tr.length; i += 4) e.segs.push(tr[i]);
@@ -839,9 +875,10 @@ function updateBoss(e, dt) {
   if (e.bk === 0 && rage) { e.rt -= dt; if (e.rt <= 0) { e.rt = .6; spawnEB(e.x - 44, e.y + 34, 0, 190 * D.spd, 5, '255,130,90'); spawnEB(e.x + 44, e.y + 34, 0, 190 * D.spd, 5, '255,130,90'); } }
 }
 function bossAttack(e, rage) {
-  const k = diffK(), rgb = BOSSES[e.bk].rgb, lv = Math.min(3, Math.floor(wave / 5));
+  const k = diffK(), rgb = BOSSES[e.bk].rgb, lv = Math.min(4, Math.floor(stageOf(wave) / 4));
   e.flashT = .15; Sfx.play('eshoot');
   e.pat = (e.pat + 1) % 3;
+  if (BOSSX[e.bk]) { BOSSX[e.bk].atk[e.pat](e, rage, k, lv, rgb); return; }
   const ring = (n, sp, off, col, r) => { for (let i = 0; i < n; i++) { const a = off + i * TAU / n; spawnEB(e.x, e.y + 10, Math.cos(a) * sp, Math.sin(a) * sp, r || 5.5, col); } };
   if (e.bk === 0) {            // 赤焰主宰：扇形弹 / 环形弹 / 三连点射
     if (e.pat === 0) { const n = 7 + lv * 2 + (rage ? 2 : 0); for (let i = 0; i < n; i++) aimEB(e.x, e.y + 30, 150 * k, (i - (n - 1) / 2) * 1.1 / (n - 1), 5.5, rgb); e.bt = 1.5; }
@@ -916,6 +953,153 @@ function bossAttack(e, rage) {
     else { for (let i = 0; i < 9; i++) aimEB(e.x, e.y + 30, 195 * k, (i - 4) * .13, 5, rgb); later.push({ t: .35, fn: () => { if (!e.dead) for (let i = 0; i < 8; i++) aimEB(e.x, e.y + 30, 170 * k, (i - 3.5) * .13, 5, '200,240,255'); } }); e.bt = 1.9; }
   }
 }
+/* =====================================================================
+ *  第 5、7、8、10–13、15–17、19、20 关的 Boss：表驱动，每个都有自己的移动方式和三种招式
+ * ===================================================================== */
+const fanAt = (x, y, n, sp, spread, r, col, extra) => { const a0 = Math.atan2(P.y - y, P.x - x); for (let i = 0; i < n; i++) { const a = a0 + (n > 1 ? (i - (n - 1) / 2) * spread / (n - 1) : 0); spawnEB(x, y, Math.cos(a) * sp, Math.sin(a) * sp, r, col, extra); } };
+const ringAt = (x, y, n, sp, off, r, col, extra) => { for (let i = 0; i < n; i++) { const a = off + i * TAU / n; spawnEB(x, y, Math.cos(a) * sp, Math.sin(a) * sp, r, col, extra); } };
+const seq = (e, n, gap, fn, t0) => { for (let i = 0; i < n; i++) later.push({ t: (t0 || 0) + i * gap, fn: () => { if (!e.dead) fn(i); } }); };
+const beamV = (x, w, warn, dur, rgb) => hazards.push({ x, w, t: 0, warn, dur, rgb, fired: false });          // 竖直光束
+const beamH = (y, w, warn, dur, rgb) => hazards.push({ hy: y, w, t: 0, warn, dur, rgb, fired: false });      // 横向光束
+const strike = (cx, cy, r, warn, rgb) => hazards.push({ cx, cy, r, t: 0, warn, dur: .28, rgb, fired: false });   // 落点轰炸：先出现圆形预警
+const homing = (x, y, vx, vy, k) => spawnEB(x, y, vx, vy, 5.5, '255,150,70', { kind: 'emissile', homing: true, shot: true, turn: 1.9, accel: 90, maxSp: 165 * k, life: 4.2, age: 0, trailT: 0 });
+const sway = (e, f, amp) => W / 2 + Math.sin(e.pt * f) * amp;
+const pullP = (e, dt, f, range) => { if (P.mode !== 'ship' && P.mode !== 'possessed') return; const dx = e.x - P.x, dy = e.y - P.y, d = Math.hypot(dx, dy) || 1; if (d < range) { const q = (1 - d / range) * f * dt; P.vx += dx / d * q; P.vy += dy / d * q; } };
+const gapRing = (e, n, sp, ga, half, r, col) => { for (let j = 0; j < n; j++) { const a = j * TAU / n; let d = a - ga; while (d > Math.PI) d -= TAU; while (d < -Math.PI) d += TAU; if (Math.abs(d) > half) spawnEB(e.x, e.y + 10, Math.cos(a) * sp, Math.sin(a) * sp, r, col); } };
+const converge = (e, n, k, col) => seq(e, n, .1, () => { const sd = randi(0, 2), x = sd === 0 ? -8 : sd === 1 ? W + 8 : rand(20, W - 20), y = sd === 2 ? H + 8 : rand(260, H - 20), d = Math.hypot(e.x - x, e.y - y) || 1, sp = 115 * k; spawnEB(x, y, (e.x - x) / d * sp, (e.y - y) / d * sp, 5, col, { ttl: d / sp - .25 }); });
+const OVERLORD = [   // 星际霸主的三种形态
+  [ (e, k, lv, rgb) => { fanAt(e.x, e.y + 30, 9 + lv, 155 * k, 1.1, 5.5, rgb); later.push({ t: .4, fn: () => { if (!e.dead) ringAt(e.x, e.y + 10, 18, 110 * k, rand(0, TAU), 5.5, '255,160,90'); } }); Sfx.play('eshoot2'); e.bt = 1.9; },
+    (e, k, lv, rgb) => { seq(e, 4, .2, () => { fanAt(e.x - 40, e.y + 26, 2, 190 * k, .1, 5, rgb); fanAt(e.x + 40, e.y + 26, 2, 190 * k, .1, 5, rgb); Sfx.play('eshoot'); }); e.bt = 2; },
+    (e, k, lv, rgb) => { for (const sd of [-1.5, -.6, .6, 1.5]) homing(e.x + sd * 30, e.y + 14, sd * 60, 60, k); seq(e, 8, .14, () => spawnEB(rand(16, W - 16), 58, 0, 160 * k, 5.5, '255,130,90')); Sfx.play('emissile'); e.bt = 2.3; } ],
+  [ (e, k, lv, rgb) => { const dir = Math.random() < .5 ? 1 : -1; for (let i = 0; i < 5; i++) beamV(W * ((dir > 0 ? i : 4 - i) + .5) / 5, 38, .85 + i * .22, .32, rgb); beamH(clamp(P.y, 250, H - 120), 28, 1.5, .5, '255,200,120'); Sfx.play('beamCharge'); e.bt = 2.8; },
+    (e, k, lv, rgb) => { const a0 = rand(0, TAU); seq(e, 16, .085, i => { for (let j = 0; j < 4; j++) { const a = a0 + i * .34 + j * Math.PI / 2; spawnEB(e.x, e.y + 10, Math.cos(a) * 118 * k, Math.sin(a) * 118 * k, 4.5, rgb, { spin: .4 }); } Sfx.play('spiral'); }); e.bt = 2.6; },
+    (e, k, lv, rgb) => { const have = enemies.filter(o => !o.dead && o.type === 1).length; for (let i = 0; i < 2 && have + i < 3; i++) spawnEnemy({ type: 1, x: e.x + (i ? 80 : -80), y: e.y, ai: 'hover', ty: 250 + i * 40, amp: 50, hoverT: 9, elite: true });
+      const off = rand(0, TAU); ringAt(e.x, e.y, 16, 120 * k, off, 5, '255,160,90', { spin: 1, spinD: .9 }); ringAt(e.x, e.y, 16, 120 * k, off, 5, rgb, { spin: -1, spinD: .9 }); Sfx.play('split'); e.bt = 2.5; } ],
+  [ (e, k, lv, rgb) => { for (let i = 0; i < 8; i++) strike(i ? rand(34, W - 34) : clamp(P.x, 34, W - 34), i ? rand(250, H - 125) : clamp(P.y, 250, H - 125), 40, .9 + i * .15, rgb); const ga = Math.atan2(P.y - e.y, P.x - e.x); seq(e, 2, .5, i => gapRing(e, 24, 108 * k, ga + (i ? .5 : -.5), .4, 5, '255,160,90')); Sfx.play('beamCharge'); e.bt = 2.7; },
+    (e, k, lv, rgb) => { converge(e, 18, k, '255,160,90'); later.push({ t: .9, fn: () => { if (!e.dead) fanAt(e.x, e.y + 30, 7, 175 * k, .9, 5.5, rgb); } }); Sfx.play('cloak'); e.bt = 2.7; },
+    (e, k, lv, rgb) => { beamV(e.x, 80, 1.2, .9, rgb); e.lockX = 2.1; later.push({ t: .4, fn: () => { if (!e.dead) for (const a of [.45, .8, 1.2, 1.94, 2.34, 2.7]) spawnEB(e.x, e.y + 14, Math.cos(a) * 205 * k, Math.sin(a) * 205 * k, 5.5, '255,230,200', { bounce: 3 }); } }); Sfx.play('beamCharge'); e.bt = 3.1; } ]
+];
+const BOSSX = {
+  8: {   // 晶簇女王：水晶护卫绕身旋转（能挡子弹，激光可以穿透）；悬停后射出的晶刺 / 回旋晶环 / 反弹棱光
+    init(e) { e.orb = { n: 3, r: 64, sp: 1.5, a: 0 }; e.segBlock = true; },
+    move: e => [sway(e, .5, W / 2 - 92), BOSS_Y + Math.sin(e.pt * 1.1) * 8],
+    tick(e, dt, rage) { if (rage && e.orb.n < 5) { e.orb.n = 5; e.orb.sp = 2.1; } },
+    atk: [
+      (e, rage, k, lv, rgb) => { const n = (rage ? 11 : 7) + lv; for (let i = 0; i < n; i++) { const a = Math.PI * (.1 + .8 * i / (n - 1)); spawnEB(e.x + Math.cos(a) * 76, e.y + 12 + Math.sin(a) * 48, 0, 0, 5, rgb, { aimT: .75 + i * .11, aimSp: 230 * k }); } Sfx.play('decloak'); e.bt = 2.5; },
+      (e, rage, k, lv, rgb) => { const n = 12 + lv * 2, off = rand(0, TAU); ringAt(e.x, e.y + 10, n, 112 * k, off, 5, rgb, { spin: 1, spinD: .9 }); later.push({ t: .4, fn: () => { if (!e.dead) ringAt(e.x, e.y + 10, n, 112 * k, off, 5, '255,120,230', { spin: -1, spinD: .9 }); } }); Sfx.play('spiral'); e.bt = 2.2; },
+      (e, rage, k) => { for (const a of (rage ? [.5, .9, 1.25, 1.9, 2.25, 2.65] : [.6, 1.1, 2.05, 2.55])) spawnEB(e.x, e.y + 16, Math.cos(a) * 205 * k, Math.sin(a) * 205 * k, 5.5, '230,250,255', { bounce: 3 }); Sfx.play('snipe'); e.bt = 2; }
+    ]
+  },
+  9: {   // 沙海巨蝎（地面 Boss）：抛出毒液（抛物线）/ 双钳交叉扫射 / 钻地突刺（落点预警）
+    move: e => [sway(e, .33, 86), BOSS_Y + Math.sin(e.pt * .9) * 8],
+    tick(e, dt) { let d = Math.atan2(P.y - e.y, P.x - e.x) - e.aim; while (d > Math.PI) d -= TAU; while (d < -Math.PI) d += TAU; e.aim += clamp(d, -2.4 * dt, 2.4 * dt); },
+    atk: [
+      (e, rage, k, lv) => { seq(e, (rage ? 9 : 6) + lv, .1, () => spawnEB(e.x, e.y, rand(-150, 150), rand(-150, -50), 6.5, '170,255,90', { ay: 210, vcap: 200 * k })); Sfx.play('mineDrop'); e.bt = 2.2; },
+      (e, rage, k, lv, rgb) => { const n = 5 + Math.floor(lv / 2); fanAt(e.x - 58, e.y + 6, n, 168 * k, .55, 5, rgb); later.push({ t: .3, fn: () => { if (!e.dead) fanAt(e.x + 58, e.y + 6, n, 168 * k, .55, 5, rgb); } }); if (rage) later.push({ t: .6, fn: () => { if (!e.dead) fanAt(e.x, e.y + 20, 3, 215 * k, .16, 5.5, '255,240,170'); } }); Sfx.play('eshoot2'); e.bt = 2.1; },
+      (e, rage, k, lv, rgb) => { const n = (rage ? 5 : 3) + Math.floor(lv / 2); for (let i = 0; i < n; i++) strike(clamp(P.x + (i ? rand(-90, 90) : 0), 30, W - 30), clamp(P.y + (i ? rand(-90, 70) : 0), 240, H - 125), 36, .9 + i * .2, rgb); Sfx.play('beamCharge'); e.bt = 2.5; }
+    ]
+  },
+  10: {  // 深海巨章：触手横扫（横向光束）/ 缓慢的大墨团 / 漩涡弹幕；狂暴后把你往它身边吸
+    move: e => [sway(e, .3, 64), BOSS_Y + Math.sin(e.pt * .7) * 14],
+    tick(e, dt, rage) { if (rage) pullP(e, dt, 620, 460); },
+    atk: [
+      (e, rage, k, lv, rgb) => { const ys = [clamp(P.y, 250, H - 120)]; for (let i = 0; i < (rage ? 2 : 1); i++) ys.push(rand(250, H - 130)); ys.forEach((y, i) => beamH(y, 30, 1 + i * .3, .5, rgb)); Sfx.play('beamCharge'); e.bt = 2.7; },
+      (e, rage, k, lv) => { fanAt(e.x, e.y + 24, (rage ? 9 : 6) + Math.floor(lv / 2), 84 * k, 1.5, 10, '120,80,190', { ttl: 6.5 }); Sfx.play('eshoot2'); e.bt = 2.1; },
+      (e, rage, k, lv, rgb) => { const a0 = rand(0, TAU), arms = rage ? 4 : 3; seq(e, 15, .085, i => { for (let j = 0; j < arms; j++) { const a = a0 + i * .36 + j * TAU / arms; spawnEB(e.x, e.y + 10, Math.cos(a) * 112 * k, Math.sin(a) * 112 * k, 4.5, rgb, { spin: .45 }); } Sfx.play('spiral'); }); e.bt = 2.5; }
+    ]
+  },
+  11: {  // 极光巨鲸：喷泉水柱（抛物线洒落）/ 带缺口的声波环 / 左右飘动的极光雨
+    move: e => [sway(e, .25, W / 2 - 112), BOSS_Y - 4 + Math.sin(e.pt * .8) * 6],
+    atk: [
+      (e, rage, k, lv) => { seq(e, (rage ? 22 : 15) + lv * 2, .06, () => spawnEB(e.x, e.y - 10, rand(-175, 175), rand(-140, -40), 5, '170,230,255', { ay: 200, vcap: 190 * k })); Sfx.play('spiral'); e.bt = 2.4; },
+      (e, rage, k, lv, rgb) => { const ga = Math.atan2(P.y - e.y, P.x - e.x) + rand(-.4, .4); seq(e, rage ? 4 : 3, .45, i => { gapRing(e, 22, 104 * k, ga + (i % 2 ? .45 : -.45) * (i > 1 ? 2 : 1), .42, 5, rgb); Sfx.play('eshoot2'); }); e.bt = 2.8; },
+      (e, rage, k, lv) => { seq(e, (rage ? 20 : 14) + lv, .1, i => spawnEB(rand(14, W - 14), 60, 0, 118 * k, 5, i % 2 ? '120,255,200' : '190,160,255', { ax: (i % 2 ? 1 : -1) * 34 })); e.bt = 2.3; }
+    ]
+  },
+  12: {  // 齿轮巨像：旋转的四臂弹幕（狂暴时中途反转）/ 在两侧墙壁间反弹的大齿轮 / 活塞重锤（落点预警）
+    move: e => [sway(e, .45, W / 2 - 102), BOSS_Y + Math.sin(e.pt) * 8],
+    atk: [
+      (e, rage, k, lv, rgb) => { const a0 = rand(0, TAU), dir = Math.random() < .5 ? 1 : -1; seq(e, rage ? 18 : 13, .15, i => { const a = a0 + dir * (rage && i > 8 ? 16 - i : i) * .2; for (let j = 0; j < 4; j++) spawnEB(e.x, e.y, Math.cos(a + j * Math.PI / 2) * 128 * k, Math.sin(a + j * Math.PI / 2) * 128 * k, 5, rgb); Sfx.play('spiral'); }); e.bt = rage ? 3.4 : 2.8; },
+      (e, rage, k) => { for (const sd of (rage ? [-1, 0, 1] : [-1, 1])) spawnEB(e.x + sd * 30, e.y + 20, sd * 95 + rand(-20, 20), 105 * k, 11, '255,170,70', { bounce: 4, ttl: 8 }); Sfx.play('eshoot2'); e.bt = 2.2; },
+      (e, rage, k, lv, rgb) => { const n = (rage ? 6 : 4) + Math.floor(lv / 2); for (let i = 0; i < n; i++) strike(i ? rand(36, W - 36) : clamp(P.x, 36, W - 36), i ? rand(250, H - 125) : clamp(P.y, 250, H - 125), 40, 1 + i * .16, rgb); Sfx.play('beamCharge'); e.bt = 2.6; }
+    ]
+  },
+  13: {  // 日月双子：月亮绕着太阳转，会自己开火，打月亮也算伤害；日冕环 / 日月交辉 / 日食（月亮轨道变大，扫过半个屏幕）
+    init(e) { e.orb = { n: 1, r: 92, sp: .9, a: 0 }; e.mt = 1.6; e.ecl = 0; },
+    move: e => [sway(e, .5, 72), BOSS_Y + Math.sin(e.pt * 1.1) * 8],
+    tick(e, dt, rage) {
+      const o = e.orb, big = e.ecl > 0; if (big) e.ecl -= dt;
+      o.r += ((big ? 250 : 92) - o.r) * Math.min(1, dt * 2.5); o.sp = big ? 2.2 : rage ? 1.3 : .9;
+      if ((e.mt -= dt) <= 0 && e.segs && e.segs[0] && P.mode !== 'dead') { e.mt = (rage ? 1.15 : 1.7) * D.ivl; fanAt(e.segs[0][0], e.segs[0][1], 3, 165 * diffK(), .3, 4.5, '170,205,255'); }
+    },
+    atk: [
+      (e, rage, k, lv, rgb) => { const n = 14 + lv * 2, off = rand(0, TAU); ringAt(e.x, e.y, n, 118 * k, off, 5.5, '255,170,60'); later.push({ t: .35, fn: () => { if (!e.dead) ringAt(e.x, e.y, n, 92 * k, off + Math.PI / n, 5, rgb); } }); Sfx.play('eshoot2'); e.bt = 2; },
+      (e, rage, k, lv, rgb) => { fanAt(e.x, e.y + 20, 7 + lv, 160 * k, 1, 5.5, rgb); if (e.segs && e.segs[0]) ringAt(e.segs[0][0], e.segs[0][1], rage ? 14 : 10, 100 * k, rand(0, TAU), 4.5, '170,205,255'); Sfx.play('eshoot'); e.bt = 2.1; },
+      (e, rage, k) => { e.ecl = 2.8; const a0 = rand(0, TAU); seq(e, 12, .1, i => { for (const o2 of [0, Math.PI]) spawnEB(e.x, e.y, Math.cos(a0 + i * .4 + o2) * 120 * k, Math.sin(a0 + i * .4 + o2) * 120 * k, 4.5, '255,170,60'); }); Sfx.play('dash'); e.bt = 3.2; }
+    ]
+  },
+  14: {  // 果冻王：在上半场弹来弹去；会分裂的果冻弹 / 碰到两侧会反弹的弹珠 / 召唤小果冻
+    init(e) { e.jx = W / 2; e.jy = BOSS_Y; e.jvx = 70; e.jvy = 46; },
+    snap: 12,
+    move(e, rage, dt) { const m = rage ? 1.5 : 1; e.jx += e.jvx * m * dt; e.jy += e.jvy * m * dt; if (e.jx < 70 || e.jx > W - 70) { e.jvx = -e.jvx; e.jx = clamp(e.jx, 70, W - 70); } if (e.jy < 150 || e.jy > 270) { e.jvy = -e.jvy; e.jy = clamp(e.jy, 150, 270); } return [e.jx, e.jy]; },
+    atk: [
+      (e, rage, k, lv, rgb) => { fanAt(e.x, e.y + 20, (rage ? 6 : 4) + Math.floor(lv / 2), 120 * k, 1.1, 9, rgb, { ttl: 1.15, split: 4 }); Sfx.play('eshoot2'); e.bt = 2.3; },
+      (e, rage, k, lv) => { const n = (rage ? 10 : 7) + lv; for (let i = 0; i < n; i++) { const a = Math.PI * (.15 + .7 * i / (n - 1)); spawnEB(e.x, e.y + 10, Math.cos(a) * 150 * k, Math.sin(a) * 150 * k, 5, '255,140,200', { bounce: 2 }); } Sfx.play('eshoot'); e.bt = 2; },
+      (e, rage, k, lv, rgb) => { const have = enemies.filter(o => !o.dead && o.type === 15).length; for (let i = 0; i < (rage ? 4 : 3) && have + i < 8; i++) spawnEnemy({ type: 15, x: e.x + rand(-40, 40), y: e.y + 24, ai: 'swarm', th: Math.PI / 2 + rand(-.9, .9), sp: 140 * D.spd, noSplit: true }); ringAt(e.x, e.y, 10 + lv * 2, 104 * k, rand(0, TAU), 5, rgb); Sfx.play('split'); e.bt = 2.4; }
+    ]
+  },
+  15: {  // 镜面魔方：在三个位置之间瞬移；折射光弹（碰壁反弹）/ 纵横交错的光束网格 / 整块推进的方阵弹
+    init(e) { e.an = 1; e.at = 2.4; },
+    snap: 9,
+    move(e, rage, dt) { if ((e.at -= dt) <= 0) { e.at = rage ? 1.9 : 2.6; e.an = (e.an + 1 + randi(0, 1)) % 3; explode(e.x, e.y, '90,230,255', 10, 180); Sfx.play('decloak'); } return [[82, W / 2, W - 82][e.an], BOSS_Y + (e.an === 1 ? 0 : 26)]; },
+    atk: [
+      (e, rage, k) => { for (const a of (rage ? [.45, .8, 1.2, 1.94, 2.34, 2.7] : [.55, 1.05, 2.1, 2.6])) spawnEB(e.x, e.y + 14, Math.cos(a) * 215 * k, Math.sin(a) * 215 * k, 5.5, '200,250,255', { bounce: 3 }); Sfx.play('snipe'); e.bt = 2.1; },
+      (e, rage, k, lv, rgb) => { const xs = [clamp(P.x, 24, W - 24), rand(30, W - 30)]; if (rage) xs.push(rand(30, W - 30)); xs.forEach((x, i) => beamV(x, 26, 1 + i * .15, .5, rgb)); beamH(clamp(P.y, 250, H - 120), 26, 1.3, .5, '255,90,220'); if (rage) beamH(rand(260, H - 140), 26, 1.6, .5, '255,90,220'); Sfx.play('beamCharge'); e.bt = 2.9; },
+      (e, rage, k, lv, rgb) => { const a = Math.atan2(P.y - e.y, P.x - e.x), m = rage ? 5 : 4, vx = Math.cos(a) * 150 * k, vy = Math.sin(a) * 150 * k; for (let i = 0; i < m; i++) for (let j = 0; j < m; j++) spawnEB(e.x + (i - (m - 1) / 2) * 17, e.y + 20 + (j - (m - 1) / 2) * 17, vx, vy, 4.5, rgb); Sfx.play('eshoot2'); e.bt = 2; }
+    ]
+  },
+  16: {  // 轨道炮台：轨道轰炸（一连串落点）/ 追踪导弹齐射 / 主炮（粗光束，开炮时停住不动）加两翼扫射
+    move(e, rage, dt) { if (e.lockX > 0) { e.lockX -= dt; return [e.x, e.y]; } return [sway(e, .35, 84), BOSS_Y + Math.sin(e.pt * .9) * 6]; },
+    atk: [
+      (e, rage, k, lv, rgb) => { const n = (rage ? 8 : 5) + lv, x0 = P.x, y0 = P.y, a = rand(0, TAU); for (let i = 0; i < n; i++) { const d = Math.ceil(i / 2) * (i % 2 ? 1 : -1); strike(clamp(x0 + Math.cos(a) * d * 62, 30, W - 30), clamp(y0 + Math.sin(a) * d * 56, 240, H - 120), 38, .85 + i * .17, rgb); } Sfx.play('beamCharge'); e.bt = 2.7; },
+      (e, rage, k) => { for (const sd of (rage ? [-1.6, -1, -.4, .4, 1, 1.6] : [-1.3, -.5, .5, 1.3])) homing(e.x + sd * 26, e.y + 12, sd * 60, 60, k); Sfx.play('emissile'); e.bt = 2.4; },
+      (e, rage, k, lv, rgb) => { beamV(e.x, 74, 1.15, .8, rgb); e.lockX = 2; later.push({ t: .5, fn: () => { if (!e.dead) for (const sd of [-1, 1]) for (let i = 0; i < (rage ? 5 : 3); i++) spawnEB(e.x + sd * 50, e.y + 10, sd * (40 + i * 34), 150 * k, 5, '255,200,120'); } }); Sfx.play('beamCharge'); e.bt = 3; }
+    ]
+  },
+  17: {  // 黑洞核心：一直把你往它身边吸；旋臂星环（弧线弹）/ 引力弹团 / 从屏幕边缘向中心坍缩的弹幕（会从背后飞来）
+    move: e => [sway(e, .3, 42), BOSS_Y + 12 + Math.sin(e.pt * .6) * 8],
+    tick(e, dt, rage) { pullP(e, dt, rage ? 900 : 560, 520); },
+    atk: [
+      (e, rage, k, lv, rgb) => { const n = 14 + lv * 2, off = rand(0, TAU), sg = Math.random() < .5 ? 1 : -1; ringAt(e.x, e.y, n, 150 * k, off, 5, rgb, { spin: 1.5 * sg, spinD: 1.1 }); if (rage) later.push({ t: .45, fn: () => { if (!e.dead) ringAt(e.x, e.y, n, 150 * k, off, 5, '255,150,90', { spin: -1.5 * sg, spinD: 1.1 }); } }); Sfx.play('spiral'); e.bt = 2.2; },
+      (e, rage, k, lv, rgb) => { const a0 = Math.atan2(P.y - e.y, P.x - e.x); for (const o2 of (rage ? [-.5, 0, .5] : [-.28, .28])) { const vx = Math.cos(a0 + o2) * 92 * k, vy = Math.sin(a0 + o2) * 92 * k; spawnEB(e.x, e.y + 16, vx, vy, 10, '120,70,200'); for (let j = 0; j < 6; j++) spawnEB(e.x + Math.cos(j * TAU / 6) * 20, e.y + 16 + Math.sin(j * TAU / 6) * 20, vx, vy, 4, rgb); } Sfx.play('eshoot2'); e.bt = 2.4; },
+      (e, rage, k, lv) => { converge(e, (rage ? 20 : 14) + lv, k, '255,150,90'); Sfx.play('cloak'); e.bt = 2.8; }
+    ]
+  },
+  18: {  // 幽灵舰长：时隐时现，隐身时打不到它；追踪鬼火（可击落）/ 从屏幕两侧横飞进来的舷炮 / 召唤隐形机
+    init(e) { e.gt = 5; e.ox = 0; },
+    move: e => [W / 2 + e.ox + Math.sin(e.pt * .5) * 46, BOSS_Y + Math.sin(e.pt * .9) * 8],
+    tick(e, dt, rage) {
+      e.gt -= dt;
+      if (e.cloaked) { e.alpha = Math.max(.16, e.alpha - dt * 3); if (e.gt <= 0) { e.cloaked = false; e.gt = rage ? 4.2 : 6; Sfx.play('decloak'); } }
+      else { e.alpha = Math.min(1, e.alpha + dt * 3); if (e.gt <= 0) { e.cloaked = true; e.gt = 1.7; e.ox = rand(-80, 80); Sfx.play('cloak'); } }
+    },
+    atk: [
+      (e, rage, k, lv, rgb) => { for (let i = 0; i < (rage ? 6 : 4); i++) spawnEB(e.x + rand(-44, 44), e.y + 12, rand(-70, 70), 40, 6, rgb, { homing: true, shot: true, turn: 1.3, accel: 30, maxSp: 118 * k, life: 4.6, age: 0, trailT: 0 }); Sfx.play('cloak'); e.bt = 2.4; },
+      (e, rage, k, lv, rgb) => { const m = (rage ? 6 : 4) + Math.floor(lv / 2), y0 = clamp(P.y, 280, H - 150); for (let i = 0; i < m; i++) { const sd = i % 2 ? 1 : -1; spawnEB(sd < 0 ? -8 : W + 8, y0 + (i - (m - 1) / 2) * 44, -sd * 36, 0, 5.5, rgb, { ax: -sd * 170, scap: 185 * k }); } Sfx.play('eshoot2'); e.bt = 2.5; },
+      (e, rage, k, lv, rgb) => { const have = enemies.filter(o => !o.dead && o.type === 11).length; for (let i = 0; i < 2 && have + i < (rage ? 3 : 2); i++) spawnEnemy({ type: 11, x: e.x + (i ? 80 : -80), y: e.y + 10, ai: 'hover', ty: 240 + i * 50, amp: 50, hoverT: 9, elite: false }); fanAt(e.x, e.y + 26, 5 + lv, 165 * k, .8, 5, rgb); Sfx.play('split'); e.bt = 2.6; }
+    ]
+  },
+  19: {  // 星际霸主（最终 Boss）：三种形态，血量每降三分之一换一种，招式越来越强
+    init(e) { e.form = 0; },
+    move(e, rage, dt) { if (e.lockX > 0) { e.lockX -= dt; return [e.x, e.y]; } const f = e.form; return f === 0 ? [sway(e, .45, W / 2 - 96), BOSS_Y + Math.sin(e.pt) * 8] : f === 1 ? [sway(e, .7, W / 2 - 84), BOSS_Y + Math.sin(e.pt * 1.4) * 16] : [W / 2 + Math.sin(e.pt * .9) * 118, BOSS_Y + 18 + Math.sin(e.pt * 1.8) * 30]; },
+    tick(e, dt) {
+      const f = e.hp > e.maxHp * .67 ? 0 : e.hp > e.maxHp * .34 ? 1 : 2;
+      if (f > e.form) { e.form = f; e.bt = 1.6; e.pat = 2; whiteFlash = .4; addShake(10); Sfx.play('boss'); for (const b of ebullets) b.dead = true; hazards.length = 0; explode(e.x, e.y, '255,120,90', 30, 300); if (f === 1) showBanner('星际霸主', '第二形态！', '#ff9a5a', 1.8); }
+    },
+    atk: [0, 1, 2].map(i => (e, rage, k, lv, rgb) => OVERLORD[e.form][i](e, k, lv, rgb))
+  }
+};
+
 function groundFire(e) {   // 地面单位开火
   const k = diffK(), rgb = ET[e.type].rgb, mx = e.x + Math.cos(e.aim) * e.r * 1.3, my = e.y + Math.sin(e.aim) * e.r * 1.3, fast = e.elite ? .75 : 1;
   e.flashT = .1;
@@ -925,7 +1109,7 @@ function groundFire(e) {   // 地面单位开火
     spawnEB(mx, my, Math.cos(e.aim) * 70, Math.sin(e.aim) * 70, 5.5, '255,150,70', { kind: 'emissile', homing: true, shot: true, turn: 1.9, accel: 90, maxSp: 165 * k, life: 4.2, age: 0, trailT: 0 });
     e.ct = 4.3 * D.ivl * fast; Sfx.play('emissile');
   } else if (e.type === 23) {   // 电磁塔：向四周放出一圈电弧弹
-    const cnt = wave >= 14 ? 10 : 8, off = rand(0, TAU);
+    const cnt = DL >= 14 ? 10 : 8, off = rand(0, TAU);
     for (let i = 0; i < cnt; i++) { const a = off + i * TAU / cnt; spawnEB(e.x, e.y, Math.cos(a) * 104 * k, Math.sin(a) * 104 * k, 4.5, rgb); }
     e.ct = 3.4 * D.ivl * fast; Sfx.play('spiral');
   } else {   // 高射炮：炮弹飞到玩家当前位置后爆成破片
@@ -935,10 +1119,14 @@ function groundFire(e) {   // 地面单位开火
   }
 }
 function updateHazards(dt) {   // 带预警的光束：预警结束后才造成伤害
-  const live = P.mode === 'ship' || P.mode === 'possessed', ax = hitAxes()[0];
+  const live = P.mode === 'ship' || P.mode === 'possessed', [ax, ay] = hitAxes();
   for (const h of hazards) {
     h.t += dt;
-    if (h.t >= h.warn) { if (!h.fired) { h.fired = true; Sfx.play('beam'); addShake(2); } if (live && Math.abs(P.x - h.x) < h.w / 2 + ax - 3) hurtPlayer(); }
+    if (h.t >= h.warn) {
+      if (!h.fired) { h.fired = true; addShake(2); if (h.cx !== undefined) { explode(h.cx, h.cy, h.rgb, 12, 190); Sfx.play('minePop'); } else Sfx.play('beam'); }
+      const hit = h.cx !== undefined ? Math.hypot(P.x - h.cx, P.y - h.cy) < h.r + 4 : h.hy !== undefined ? Math.abs(P.y - h.hy) < h.w / 2 + ay - 3 : Math.abs(P.x - h.x) < h.w / 2 + ax - 3;
+      if (live && hit) hurtPlayer();
+    }
   }
   compact(hazards, h => h.t >= h.warn + h.dur);
 }
@@ -1016,6 +1204,7 @@ function hurtPlayer() {
   if (P.lives <= 0) enterSoul();
 }
 function enterSoul() {
+  deaths++;
   P.mode = 'soul'; P.lives = 0; P.soulE = 100; P.ghost = null; P.inv = 0; P.star = 0; P.extra = 0; P.od = 0;
   if (pk('keep')) {   // 黑匣子：保留一半
     for (const k2 in P.wl) P.wl[k2] = Math.max(k2 === 'normal' ? 1 : 0, Math.floor(P.wl[k2] / 2));
@@ -1041,7 +1230,7 @@ function possess(e) {
   e.dead = true;
   const sk = SKILL[e.type];
   P.mode = 'possessed';
-  const gh = sk.hp + Math.max(0, Math.floor((wave - 1) / 6)) + pk('soul') * 2 + (e.elite ? 2 : 0);
+  const gh = sk.hp + Math.max(0, Math.floor((DL - 1) / 6)) + pk('soul') * 2 + (e.elite ? 2 : 0);
   P.ghost = { type: e.type, hp: gh, maxHp: gh };
   P.extra = 0; P.od = 0; P.inv = 1.2; P.fireCd = .1;
   P.x = e.x; P.y = clamp(e.y, minY(), maxY());
@@ -1276,7 +1465,10 @@ function killEnemy(e) {
     whiteFlash = .5;
     for (const b of ebullets) { if (!b.dead) { b.dead = true; spark(b.x, b.y, b.rgb, 2); } }   // Boss 被击败：清空全屏敌弹
     hazards.length = 0;
-    later.push({ t: 1.8, fn: offerPerks });
+    if (isBossWave(wave) && stageOf(wave) === NSTAGE - 1 && !enemies.some(o => o !== e && !o.dead && o.type === 4)) {   // 最后一关的 Boss：通关
+      for (const o of enemies) if (!o.dead && o !== e) { o.dead = true; explode(o.x, o.y, ET[o.type].rgb, 10, 160); }
+      P.inv = 99; later.push({ t: 2.6, fn: startVictory });
+    } else later.push({ t: 1.8, fn: offerPerks });
   } else {
     explode(e.x, e.y, def.rgb, Math.round(10 + def.r * .7), 150 + def.r * 4);
     Sfx.play(def.sfx);
@@ -1350,6 +1542,8 @@ function updateBullets(dt) {
       const rr = e.r + b.r;
       let segHit = false;
       if (e.segs) for (const q of e.segs) if (segDist2(q[0], q[1], b.x, b.y, tx, ty) < (15 + b.r) * (15 + b.r)) { segHit = true; break; }   // 炎龙的身体也能打
+      if (segHit && e.segBlock && b.kind !== 'laser') { b.dead = true; spark(b.x, b.y, '200,245,255', 3); Sfx.play('shieldHit'); break; }   // 水晶护卫挡住子弹（激光可以穿透）
+      if (segHit && e.segBlock) segHit = false;
       if (segHit || segDist2(e.x, e.y, b.x, b.y, tx, ty) < rr * rr) {
         if (b.kind === 'blast') { blastAt(b, e); b.dead = true; break; }
         hitEnemy(e, b.dmg, b.x, b.y, b.rgb);
@@ -1416,7 +1610,7 @@ function updateEnemies(dt) {
       }
     } else if (e.type === 12 && e.y > 30 && P.mode !== 'dead') {   // 旋涡机：周期性喷出双臂螺旋弹幕
       e.ct -= dt;
-      if (e.ct <= 0) { e.bn = 14; e.ct = 3.2 - Math.min(wave * .05, 1); }
+      if (e.ct <= 0) { e.bn = 14; e.ct = 3.2 - Math.min(DL * .05, 1); }
       if (e.bn > 0 && (e.bt2 -= dt) <= 0) {
         e.bt2 = .09; e.bn--; e.sa += .42; Sfx.play('spiral');
         for (const o of [0, Math.PI]) spawnEB(e.x, e.y, Math.cos(e.sa + o) * 125 * diffK(), Math.sin(e.sa + o) * 125 * diffK(), 4.5, '255,150,60');
@@ -1462,7 +1656,7 @@ function updateEnemies(dt) {
             spark(mx, my, '255,140,140', 7); Sfx.play('snipe'); addShake(1.5);
             e.shots++; e.pt = 0;
             if (e.shots >= 3) { e.phase = 3; e.vx = (e.x < W / 2 ? -1 : 1) * 170; e.rot = Math.PI; }
-            else { e.phase = 1; e.cd = 1.7 - Math.min(wave * .04, .6); }
+            else { e.phase = 1; e.cd = 1.7 - Math.min(DL * .04, .6); }
           }
         } else { e.x += e.vx * dt; e.y += 25 * dt; }
         break;
@@ -1552,7 +1746,7 @@ function steerEB(b, dt) {   // 敌方导弹：转向追踪玩家
   b.vx = Math.cos(cur) * sp; b.vy = Math.sin(cur) * sp;
   if ((b.trailT -= dt) <= 0 && particles.length < 400) {
     b.trailT = .04;
-    particles.push({ x: b.x - Math.cos(cur) * 8, y: b.y - Math.sin(cur) * 8, vx: rand(-10, 10), vy: rand(-10, 10), life: 0, max: .3, size: 4.5, rgb: '255,130,70', drag: 3 });
+    particles.push({ x: b.x - Math.cos(cur) * 8, y: b.y - Math.sin(cur) * 8, vx: rand(-10, 10), vy: rand(-10, 10), life: 0, max: .3, size: 4.5, rgb: b.kind === 'emissile' ? '255,130,70' : b.rgb, drag: 3 });
   }
 }
 function mineBurst(b) {   // 水雷延时爆裂成一圈子弹
@@ -1570,6 +1764,17 @@ function updateEBullets(dt) {
       if (!b.beep && b.t < .55) { b.beep = true; Sfx.play('mineBeep'); }
       if (b.t <= 0) { b.dead = true; mineBurst(b); continue; }
     }
+    if (b.ttl !== undefined && (b.ttl -= dt) <= 0) {   // 限时弹：到时间消失；带 split 的会分裂成一圈小弹
+      b.dead = true; spark(b.x, b.y, b.rgb, 3);
+      if (b.split) { ringAt(b.x, b.y, b.split, 112 * diffK(), rand(0, TAU), 4.5, b.rgb); Sfx.play('minePop'); }
+      continue;
+    }
+    if (b.ax) b.vx += b.ax * dt;
+    if (b.ay) { b.vy += b.ay * dt; if (b.vcap && b.vy > b.vcap) b.vy = b.vcap; }   // 抛物线
+    if (b.scap) { const v = Math.hypot(b.vx, b.vy); if (v > b.scap) { b.vx *= b.scap / v; b.vy *= b.scap / v; } }
+    if (b.spin) { const c = Math.cos(b.spin * dt), sn = Math.sin(b.spin * dt), vx = b.vx; b.vx = vx * c - b.vy * sn; b.vy = vx * sn + b.vy * c; if (b.spinD) b.spin *= Math.max(0, 1 - b.spinD * dt); }   // 弧线弹
+    if (b.aimT !== undefined && (b.aimT -= dt) <= 0) { const a = Math.atan2(P.y - b.y, P.x - b.x); b.vx = Math.cos(a) * b.aimSp; b.vy = Math.sin(a) * b.aimSp; b.aimT = undefined; Sfx.play('eshoot'); }   // 悬停后射向玩家
+    if (b.bounce && ((b.x < 6 && b.vx < 0) || (b.x > W - 6 && b.vx > 0))) { b.vx = -b.vx; b.bounce--; spark(b.x, b.y, b.rgb, 2); }   // 碰到两侧反弹
     b.x += b.vx * dt; b.y += b.vy * dt;
     if (b.y > H + 20 || b.y < -40 || b.x < -30 || b.x > W + 30) { b.dead = true; continue; }
     if (live) {
@@ -1637,17 +1842,18 @@ function soulRescue(dt) {   // 灵魂形态下场上没有可夺舍的敌机（�
   if (enemies.some(e => !e.dead && SKILL[e.type] && e.y < H - 40)) { soulIdle = 0; return; }
   if ((soulIdle += dt) < 1.6) return;
   soulIdle = -2.5;
-  const s0 = Math.random() < .5 ? -1 : 1, ty = wave >= 4 && Math.random() < .5 ? 1 : 0;
+  const s0 = Math.random() < .5 ? -1 : 1, ty = DL >= 4 && Math.random() < .5 ? 1 : 0;
   for (let i = 0; i < 3; i++) spawnEnemy({ type: ty, x: W / 2 + s0 * (i - 1) * 70, y: -30 - i * 26, ai: 'sine', vy: 95, amp: 30, f: 1.3, ph: i });
   popup(W / 2, safeTop + 170, '敌方增援出现，夺舍它！', '#8ff0ff', 15, 1.8); Sfx.play('alarm');
 }
-let debugNoWaves = false;   // 仅调试用：暂停刷怪
+let debugNoWaves = false, dbgSpeed = 1;   // 仅调试用：暂停刷怪
 function updateWave(dt) {
   if (debugNoWaves) return;
+  if (waveState === 'done') return;
   if (waveState === 'pause') {
     waveT -= dt;
     if (waveT <= 0) {
-      wave++; queue = buildWave(wave); waveTime = 0; waveState = 'active';
+      wave++; DL = levelOf(wave); queue = buildWave(wave); waveTime = 0; waveState = 'active';
       if (pk('guard') && (P.mode === 'ship' || P.mode === 'possessed')) P.shield = Math.max(P.shield, 4 * pk('guard'));
     }
     return;
@@ -1655,14 +1861,15 @@ function updateWave(dt) {
   waveTime += dt;
   while (queue.length && queue[0].t <= waveTime) spawnEnemy(queue.shift());
   if (!queue.length && !enemies.some(e => !e.dead)) {
-    const bonus = wave * 50; score += bonus;
-    popup(W / 2, H * .45, '波次完成  +' + bonus, '#9deaff', 16); Sfx.play('wave');
-    waveState = 'pause'; waveT = 2.6;
+    if (wave >= NSTAGE * WPS) { waveState = 'done'; return; }   // 最后一关的 Boss 已被击败：不再出怪，等通关动画
+    const boss = isBossWave(wave), bonus = (stageOf(wave) + 1) * (boss ? 200 : 60); score += bonus;
+    popup(W / 2, H * .45, (boss ? '第 ' + (stageOf(wave) + 1) + ' 关完成  +' : '波次完成  +') + bonus, '#9deaff', 16); Sfx.play('wave');
+    waveState = 'pause'; waveT = 2.1;
     const nw = wave + 1;
     later.push({ t: .5, fn: () => {
       if (state !== 'playing') return;
-      if (nw % 5 === 1) { const z = Math.floor((nw - 1) / 5); showBanner('第 ' + (z + 1) + ' 关', STAGES[z % STAGES.length].name, '#9deaff', 2.6); Sfx.play('zone'); }
-      else if (nw % 5 !== 0) showBanner('第 ' + nw + ' 波', '', '#ffd24a', 1.8);
+      if (nw % WPS === 1) { const z = stageOf(nw); showBanner('第 ' + (z + 1) + ' 关', STAGES[z].name, '#9deaff', 2.6); Sfx.play('zone'); }
+      else if (!isBossWave(nw)) showBanner('第 ' + (stageOf(nw) + 1) + ' 关 · 第 2 波', '', '#ffd24a', 1.8);
     } });
   }
 }
@@ -1670,6 +1877,11 @@ function updateWave(dt) {
 function update(dt) {
   R.update(dt);
   bgMulT = (state === 'playing' && P.speedT > 0) ? 2.4 : 1;
+  if (state === 'victory') {
+    updateVictory(dt); updateFx(dt);
+    compact(particles, p => p.life >= p.max); compact(rings, r => r.life >= r.max); compact(popups, p => p.life >= p.max);
+    return;
+  }
   if (state !== 'playing' && state !== 'over') return;
   if (resumeT > 0) { resumeT -= dt; return; }
   gameTime += dt;
@@ -1712,8 +1924,8 @@ function drawHUD(t) {
   ctx.font = '800 24px ' + FONT; ctx.fillStyle = '#fff'; ctx.fillText(String(score).padStart(6, '0'), x0, y0 + 10);
   ctx.textAlign = 'right';
   ctx.font = '700 10px ' + FONT; ctx.fillStyle = 'rgba(170,200,255,.75)'; ctx.fillText('BEST ' + Math.max(bestScore(), score), W - 62, y0 + 2);
-  ctx.font = '800 15px ' + FONT; ctx.lineWidth = 3; ctx.strokeStyle = 'rgba(0,0,20,.55)'; ctx.strokeText(D.name + ' · 第 ' + Math.max(1, wave) + ' 波', W - 62, y0 + 16);
-  ctx.fillStyle = '#ffd24a'; ctx.fillText(D.name + ' · 第 ' + Math.max(1, wave) + ' 波', W - 62, y0 + 16);
+  ctx.font = '800 15px ' + FONT; ctx.lineWidth = 3; ctx.strokeStyle = 'rgba(0,0,20,.55)'; ctx.strokeText(D.name + ' · 第 ' + (stageOf(wave) + 1) + '/' + NSTAGE + ' 关', W - 62, y0 + 16);
+  ctx.fillStyle = '#ffd24a'; ctx.fillText(D.name + ' · 第 ' + (stageOf(wave) + 1) + '/' + NSTAGE + ' 关', W - 62, y0 + 16);
 
   const y1 = y0 + 42;
   ctx.textAlign = 'left';
@@ -1841,7 +2053,7 @@ function showOverlay(id) { document.querySelectorAll('.overlay').forEach(o => o.
 function resetWorld() {
   bullets.length = ebullets.length = enemies.length = powerups.length = particles.length = rings.length = popups.length = novas.length = later.length = 0;
   hazards.length = 0; perks = {}; combo = comboT = bestCombo = grazes = 0; seenElite = false;
-  seenTypes = {}; score = 0; wave = 0; kills = 0; gameTime = 0; pity = 0; queue = []; waveState = 'pause'; waveT = 1.2; waveTime = 0;
+  seenTypes = {}; score = 0; wave = 0; DL = 1; kills = 0; gameTime = 0; pity = 0; deaths = 0; queue = []; waveState = 'pause'; waveT = 1.2; waveTime = 0;
   shake = hurtFlash = whiteFlash = 0; banner = null; resumeT = 0;
   Object.assign(P, { x: W / 2, y: H - 190, vx: 0, vy: 0, tilt: 0, mode: 'ship', lives: D.lives, wt: 'normal', wl: { normal: 1, laser: 0, lock: 0, blast: 0 }, pod: 0,
     podX: [W / 2, W / 2], podY: [H - 190, H - 190], podCd: [0, .5], extra: 0, shield: 0, speedT: 0, inv: 1.5,
@@ -1893,6 +2105,49 @@ function quitRun() {   // 暂停菜单里的「结束游戏」：记录成绩后
   if (state === 'paused' && score > 0) submitScore(score, Math.max(1, wave));
   toMenu();
 }
+/* ---------- 通关：烟花 + 战机翻滚冲出画面 + 飞回母星，然后显示通关画面 ---------- */
+function startVictory() {
+  if (state !== 'playing') return;
+  releaseInputs(); input.aLock = false; setState('victory'); showOverlay('');
+  vicT = 0; vicShown = false; vicFw = 0;
+  if (P.mode !== 'ship') { P.mode = 'ship'; P.ghost = null; P.lives = Math.max(1, P.lives); }
+  P.inv = 0; P.star = 0; P.shield = 0; P.speedT = 0; P.vx = P.vy = 0; P.muz = 0;
+  bullets.length = ebullets.length = hazards.length = novas.length = enemies.length = powerups.length = later.length = 0;
+  vicBonus = Math.max(0, P.lives) * 500 + ({ easy: 1000, normal: 3000, hard: 6000 }[diffKey] || 0);
+  score += vicBonus; vicRes = submitScore(score, wave, true);
+  showBanner('任务完成', '星际霸主已被击败！', '#ffe27a', 2.6); Sfx.play('perk'); vibrate([60, 40, 60, 40, 160]);
+}
+function firework(x, y) {
+  const c = pick(['255,120,160', '255,215,90', '120,230,255', '150,255,170', '200,150,255', '255,255,255']);
+  explode(x, y, c, 26, 250); rings.push({ x, y, r: 6, grow: 230, life: 0, max: .6, rgb: c, w: 3 }); Sfx.play(Math.random() < .5 ? 'pop' : 'boom');
+}
+function updateVictory(dt) {
+  vicT += dt;
+  if ((vicFw -= dt) <= 0) { vicFw = rand(.2, .48); firework(rand(30, W - 30), rand(90, H * .72)); }
+  if (shake > 0) shake = Math.max(0, shake - 30 * dt);
+  if (vicT < 1.2) {            // 飞到屏幕中下方
+    const k = Math.min(1, dt * 3); P.x += (W / 2 - P.x) * k; P.y += (H * .62 - P.y) * k; P.tilt *= .9; P.vy = 0;
+  } else if (vicT < 3.1) {     // 胜利翻滚，加速冲出画面
+    const u = vicT - 1.2, q = Math.min(1, u / 1.2);
+    P.tilt = (TAU / .62) * q * q * (3 - 2 * q); P.vy = -(50 + u * u * 520); P.y += P.vy * dt;
+    spark(P.x + rand(-8, 8), P.y + 34, '255,220,120', 2);
+  } else {                     // 换成母星场景，战机回到画面中巡航
+    if (!vicShown) { vicShown = true; whiteFlash = .6; showWin(); }
+    const u = vicT - 3.1, q = Math.min(1, u / 1.6), ez = 1 - (1 - q) * (1 - q);
+    P.x = W / 2 + Math.sin(u * .6) * 46; P.y = lerp(H + 90, H * .43, ez) + Math.sin(u * .9) * 10; P.tilt = Math.cos(u * .6) * .6; P.vy = 0;
+  }
+  bgMulT = vicT < 3.1 ? 3 : 1.3;
+}
+function showWin() {
+  const stars = deaths === 0 ? 3 : deaths <= 2 ? 2 : 1, res = vicRes || { rank: -1, entry: null };
+  document.querySelectorAll('#winStars i').forEach((el, i) => { el.className = i < stars ? 'on' : ''; el.style.animationDelay = (.5 + i * .35) + 's'; });
+  const mm = Math.floor(gameTime / 60), ss = Math.floor(gameTime % 60);
+  $('winStats').innerHTML = '难度 ' + D.name + ' · 用时 ' + mm + ':' + pad2(ss) + '<br>击毁 ' + kills + ' 架 · 最高 ' + bestCombo + ' 连击 · 阵亡 ' + deaths + ' 次<br>通关奖励 +' + vicBonus;
+  $('winBadge').innerHTML = res.rank === 0 ? '<span class="badge">🏆 新纪录！</span>' : (res.rank > 0 ? '<span class="badge">榜单第 ' + (res.rank + 1) + ' 名</span>' : '');
+  const el = $('winScore'), t0 = performance.now(), fin = score;
+  (function tick() { const q = Math.min(1, (performance.now() - t0) / 1500); el.textContent = Math.round(fin * (1 - Math.pow(1 - q, 3))); if (q < 1 && state === 'victory') requestAnimationFrame(tick); else el.textContent = fin; })();
+  showOverlay('win'); Sfx.play('zone');
+}
 let pickFrom = 'pause';
 function openDiffPick(from) { pickFrom = from; showOverlay('diffpick'); Sfx.play('click'); }   // 重新开始前先选难度
 function endGame() {
@@ -1903,7 +2158,7 @@ function endGame() {
   setTimeout(() => {
     if (state !== 'over') return;
     $('overScore').textContent = score;
-    $('overWave').textContent = '到达第 ' + Math.max(1, wave) + ' 波 · 击毁 ' + kills + ' 架 · 最高 ' + bestCombo + ' 连击';
+    $('overWave').textContent = '到达第 ' + (stageOf(wave) + 1) + ' 关 · 击毁 ' + kills + ' 架 · 最高 ' + bestCombo + ' 连击';
     $('overBadge').innerHTML = res.rank === 0 ? '<span class="badge">🏆 新纪录！</span>' : (res.rank > 0 ? '<span class="badge">榜单第 ' + (res.rank + 1) + ' 名</span>' : '');
     renderScores($('overList'), 5, res.entry);
     showOverlay('over');
@@ -1939,6 +2194,9 @@ $('scoresClear').onclick = function () {
 $('againBtn').onclick = () => openDiffPick('over');
 $('overScoresBtn').onclick = () => openScores('over');
 $('overMenuBtn').onclick = toMenu;
+$('winAgainBtn').onclick = () => openDiffPick('win');
+$('winScoresBtn').onclick = () => openScores('win');
+$('winMenuBtn').onclick = toMenu;
 
 document.addEventListener('visibilitychange', () => { if (document.hidden) pauseGame(); });
 addEventListener('blur', () => pauseGame());
@@ -2063,6 +2321,33 @@ const R = (() => {
       bx(0, 11, 14, 16, 9, 26, 0x5a6cb0), bx(0, 17, 18, 10, 5, 12, 0xffd24a), sp(0, 9, -30, 7, 5, 12, 0x7fe6ff),
       ...[-54, -24, 24, 54].flatMap(x => [sp(x, Math.abs(x) > 40 ? 8 : 6, 24, 6, 4.5, 6, 0xdfe6f8), cy(x, Math.abs(x) > 40 ? 8 : 6, 36, 1.8, 1.8, 16, 0xffd24a)]),
       ...both(s => cy(s * 34, 7, -2, .6, 2.2, 22, 0xfff2a0, 'y', 5)), cy(0, 24, 18, .6, 1.6, 18, 0xfff2a0, 'y', 5)],
+    b8: [pm([[0, -52], [20, -30], [28, 4], [18, 38], [0, 54]], -6, 14, 0x6ad8f0, 2), pm([[0, -34], [11, -18], [15, 4], [9, 24], [0, 34]], 8, 8, 0xc8f6ff, 1), sp(0, 20, 0, 9, 7, 11, 0xff7ae0),
+      ...both(s => cy(s * 30, 2, -34, 0, 8, 40, 0xd0f8ff, 'z', 5, { ry: -s * .45 })), ...both(s => cy(s * 44, 0, 4, 0, 7, 34, 0x9af0ff, 'z', 5, { ry: -s * 1.2 })), ...both(s => cy(s * 22, 0, 52, 6, 0, 26, 0x9af0ff, 'z', 5, { ry: s * .4 })), cy(0, 24, -34, 0, 5, 20, 0xffffff, 'y', 5)],
+    seg8: [cy(0, 8, 0, 0, 10, 16, 0x9af4ff, 'y', 6), cy(0, -8, 0, 10, 0, 16, 0x6ad8f0, 'y', 6)],
+    b9: [pm([[0, -46], [24, -36], [34, -8], [30, 26], [16, 46], [0, 50]], 4, 13, 0xc47a38, 1.5), pm([[0, -30], [14, -22], [20, -2], [16, 20], [0, 28]], 17, 5, 0x8a4c20, 1),
+      ...both(s => bx(s * 48, 12, -44, 12, 9, 40, 0xa85a2a, { ry: -s * .35 })), ...both(s => sp(s * 44, 12, -74, 13, 7, 17, 0xe89a4a)), ...both(s => cy(s * 38, 12, -92, 0, 4, 16, 0xfff0c0)),
+      ...[-22, 0, 22].flatMap(z => both(s => bx(s * 46, 8, z, 34, 4, 6, 0x7a4a22, { ry: s * z * .012 }))), ...both(s => sp(s * 9, 20, -38, 3.6, 3, 3.6, 0xff3b2a))],
+    b9t: [sp(0, 26, 30, 11, 9, 11, 0xc47a38), sp(0, 38, 18, 10, 8, 10, 0xb86c30), sp(0, 48, 4, 9, 7, 9, 0xa85a2a), sp(0, 54, -10, 7, 6, 8, 0xe89a4a), cy(0, 54, -26, 0, 5, 24, 0xfff0a0)],
+    b10: [sp(0, 6, 14, 32, 20, 40, 0xa060e0), sp(0, 14, 34, 22, 14, 24, 0x8a48c8), ...both(s => sp(s * 15, 16, -8, 7, 7, 7, 0xfff0a0)), ...both(s => sp(s * 16, 19, -12, 3.2, 3.2, 3.2, 0x1a0630)),
+      ...[-1.15, -.72, -.3, .3, .72, 1.15].map(a => cy(0, 0, -48, 2, 7.5, 56, 0x8a48c8, 'z', 6, { ry: a })), ...[-1.15, -.72, -.3, .3, .72, 1.15].map(a => sp(0, 0, -78, 4, 3, 4, 0xffa0e0, { ry: a }))],
+    b11: [sp(0, 2, 0, 36, 22, 66, 0x2f7fc0), sp(0, -6, -4, 30, 14, 54, 0xbfe6f4), pm([[0, 52], [34, 78], [30, 88], [0, 70]], 0, 5, 0x2a6aa8, 1), ...both(s => bx(s * 44, -2, -10, 30, 4, 16, 0x2a6aa8, { ry: s * .45 })),
+      ...both(s => sp(s * 24, 10, -38, 4, 4, 4, 0xffffff)), ...both(s => sp(s * 25, 11, -40, 2, 2, 2, 0x06203a)), ...[-30, -12, 6, 24, 40].map((z, i) => sp(0, 22, z, 5, 2.4, 5, i % 2 ? 0x7affd0 : 0xb48aff)), cy(0, 24, -20, 2.5, 2.5, 4, 0x1a4a7a, 'y')],
+    b12: [cy(0, 0, 0, 44, 44, 12, 0xb88a3a, 'y', 12), ...[0, 1, 2, 3, 4, 5, 6, 7].map(i => bx(0, 0, -50, 15, 12, 14, 0x8a6428, { ry: i * PI / 4 })), cy(0, 8, 0, 22, 24, 8, 0x5a5f6a, 'y', 10), sp(0, 14, 0, 11, 7, 11, 0xff9a3a),
+      ...ring4(a => cy(0, 10, -32, 4, 4, 6, 0x2a2c34, 'y', 6, { ry: a })), ...[0, 1, 2, 3, 4, 5].map(i => bx(0, 13, -14, 3, 2, 14, 0xdfe6f4, { ry: i * PI / 3 }))],
+    b13: [sp(0, 0, 0, 30, 22, 30, 0xffc040), sp(0, 8, 0, 20, 14, 20, 0xffe890), ...[0, 1, 2, 3, 4, 5, 6, 7].map(i => cy(0, 0, -44, 0, 8, 26, 0xff8a2a, 'z', 5, { ry: i * PI / 4 })),
+      ...both(s => sp(s * 10, 18, -12, 3.6, 3.6, 3.6, 0x5a2a08)), bx(0, 16, -22, 12, 2, 3, 0x5a2a08)],
+    seg13: [sp(0, 0, 0, 20, 15, 20, 0xc8d8f4), sp(-8, 10, -6, 5, 3, 5, 0x8a9ac0), sp(7, 11, 4, 4, 2.4, 4, 0x8a9ac0), sp(2, 9, -12, 3, 2, 3, 0x8a9ac0), ...both(s => sp(s * 6, 13, -4, 2.2, 2.2, 2.2, 0x1a2a5a))],
+    b14: [sp(0, 2, 0, 42, 26, 38, 0x5ae890), sp(0, 14, -4, 30, 18, 28, 0x9af6b8), ...[-22, -11, 0, 11, 22].map((x, i) => cy(x, 36 - Math.abs(x) * .3, 6, 0, 5.5, 16, i % 2 ? 0xffe27a : 0xffd24a, 'y', 5)), cy(0, 26, 6, 26, 26, 5, 0xffd24a, 'y', 10),
+      ...both(s => sp(s * 14, 18, -26, 8, 8, 6, 0xffffff)), ...both(s => sp(s * 14, 19, -31, 3.6, 3.6, 3, 0x12301c)), bx(0, 10, -35, 14, 3, 3, 0x1c6a3a), ...both(s => sp(s * 28, 8, -22, 6, 4, 4, 0xff9ac8))],
+    b15: [bx(0, 0, 0, 58, 42, 58, 0x26346a), bx(0, 22, 0, 46, 2, 46, 0x9af0ff), ...ring4(a => bx(0, 0, -30, 40, 28, 2, 0x7fe6ff, { ry: a - PI / 4 })), ...ring4(a => sp(0, 21, -41, 6, 6, 6, 0xffffff, { ry: a })), ...ring4(a => sp(0, -21, -41, 6, 6, 6, 0xff5ad8, { ry: a })), sp(0, 26, 0, 9, 5, 9, 0xff5ad8)],
+    b16: [cy(0, 0, 0, 38, 42, 12, 0x8a8f9a, 'y', 8), ...both(s => bx(s * 70, 0, 0, 48, 2, 28, 0x2a50c0)), ...both(s => bx(s * 44, 0, 0, 8, 4, 6, 0xc8ccd4)), cy(0, 8, -32, 7, 11, 64, 0xdfe6f4), cy(0, 8, -66, 9, 9, 6, 0x5a5f6a), sp(0, 8, -70, 6, 6, 6, 0xff6a3a),
+      ...both(s => bx(s * 24, 9, 16, 13, 9, 24, 0x5a5f6a)), ...both(s => cy(s * 24, 9, 3, 0, 3, 6, 0xff3b3b)), sp(0, 12, 12, 10, 7, 10, 0x7fe6ff)],
+    b17: [sp(0, 0, 0, 26, 26, 26, 0x08030f), to(0, 0, 0, 40, 6, 0xb060ff), to(0, 0, 0, 56, 2.6, 0xff9a3a), ...ring4(a => bx(0, 0, -64, 12, 9, 18, 0x6a6f8a, { ry: a })), ...ring4(a => sp(0, 0, -74, 4, 4, 4, 0xff5ad8, { ry: a }))],
+    b18: [pm([[0, -64], [15, -42], [21, 0], [18, 40], [0, 54]], -6, 12, 0x2f6052, 1.5), bx(0, 7, -2, 24, 2, 76, 0x24463c), bx(0, 12, 34, 22, 10, 22, 0x3a7260), ...[-30, -2, 26].map(z => cy(0, 30, z, 1.6, 1.6, 46, 0x8ad0b8, 'y', 5)),
+      ...[-30, -2].map(z => bx(0, 34, z + 2, 42, 24, 1.6, 0xc8ffec)), ...both(s => sp(s * 13, 16, 44, 3.4, 3.4, 3.4, 0x8affc0)), sp(0, 14, -52, 4, 4, 4, 0x8affc0), cy(0, 4, -74, 0, 3, 22, 0x8ad0b8)],
+    b19: [pm([[26, -34], [84, -12], [96, 26], [72, 46], [30, 34]], -3, 7, 0x4a0c18, 1.2), pm([[0, -72], [18, -52], [30, -10], [34, 30], [20, 62], [0, 68]], -6, 16, 0x8a1c2c, 2), pm([[0, -46], [12, -30], [16, 0], [10, 30], [0, 40]], 10, 6, 0x2a0810, 1),
+      sp(0, 18, -10, 14, 10, 16, 0xff3b3b), sp(0, 26, -12, 6, 4, 8, 0xfff0a0), ...both(s => cy(s * 42, 6, -58, 0, 6.5, 44, 0xffd24a, 'z', 5, { ry: -s * .3 })), ...both(s => cy(s * 70, 2, -22, 4, 4, 40, 0xdfe6f4)), ...both(s => cy(s * 88, 2, 0, 3, 3, 30, 0xdfe6f4)),
+      ...both(s => cy(s * 24, 0, 66, 8, 11, 14, 0x1c1420)), ...both(s => sp(s * 56, 6, 22, 6, 4, 6, 0xff9a3a)), cy(0, 26, 20, 0, 4, 22, 0xffd24a, 'y', 5)],
     seg: [sp(0, 0, 0, 15, 11, 15, 0xe86a30), sp(0, 8, 0, 7, 5, 7, 0xffd890), ...ring6(a => cy(0, 0, -18, 0, 3.5, 9, 0xffb347, 'z', 5, { ry: a }))],
     pod: [pm([[0, -12], [4.5, -7], [5.5, 7], [3, 13], [0, 11]], -1.5, 3, 0xd8e4f8, .5), sp(0, 2, 4, 2.6, 2, 2.6, 0x2fb6ff)],
     mine: [sp(0, 0, 0, 7, 7, 7, 0x6a5a26), sp(0, 5.4, 0, 2.6, 2.6, 2.6, 0xff3b2a), ...ring6(a => cy(0, 0, -9, 0, 1.7, 5, 0xc9a23a, 'z', 5, { ry: a }))],
@@ -2124,12 +2409,24 @@ const R = (() => {
   const STG = {
     snow:   { fog: 0x6a82b0, amb: .16, sun: [0xfff4e0, 1.05, [-.75, .7, .45]], hemi: [0xcfe0ff, 0x3a4a70, .3], amp: 46, bias: 0,   liq: [-.5, 0x5fb0dc, .92, 0], pal: [[-1, 0x35527f], [-.45, 0x5876a8], [.1, 0x8098c4], [1, 0xb4c4e0]], wx: 'snow', cloud: 0xffffff },
     desert: { fog: 0xa07c4a, amb: .16, sun: [0xfff0d0, 1.05, [-.75, .7, .45]],   hemi: [0xffe6b8, 0x6a4420, .3],  amp: 40, bias: 0,   pal: [[-1, 0x5a3818], [-.2, 0x86602e], [.4, 0xa8824a], [1, 0xc8a868]], wx: 'dust', cloud: 0xffe9c0 },
-    ocean:  { fog: 0x5a94cc, amb: .16, sun: [0xffffff, 1.05, [-.75, .7, .45]],   hemi: [0xcfe8ff, 0x143c70, .3], amp: 80, bias: -.5, jit: .025, liq: [0, 0x185aa8, .88, 0], pal: [[-1, 0x0c3468], [-.06, 0x2a70a8], [.03, 0xd8c48a], [.2, 0x459848], [1, 0x286a32]], wx: 'none', cloud: 0xffffff },
+    ocean:  { fog: 0x5a94cc, amb: .16, sun: [0xffffff, 1.05, [-.75, .7, .45]],   hemi: [0xcfe8ff, 0x143c70, .3], amp: 80, bias: -.5, jit: .025, boat: true, liq: [0, 0x185aa8, .88, 0], pal: [[-1, 0x0c3468], [-.06, 0x2a70a8], [.03, 0xd8c48a], [.2, 0x459848], [1, 0x286a32]], wx: 'none', cloud: 0xffffff },
     canyon: { fog: 0x7a4a5c, amb: .18, sun: [0xffc8a0, .95, [-.85, .55, .3]], hemi: [0xffd2c0, 0x3a1c34, .34], amp: 104, bias: .12, flat: .1, liq: [-.24, 0x1f7f8a, .9, 0], pal: [[-1, 0x2c1826], [-.25, 0x5e2c32], [.25, 0x8a4634], [.7, 0xa86a42], [1, 0xc8905e]], wx: 'dust', cloud: 0xffc4a8 },
     jungle: { fog: 0x6fa884, amb: .16, sun: [0xfffbe0, 1.05, [-.75, .7, .45]],  hemi: [0xdfffe0, 0x163c1c, .3],  amp: 46, bias: .1,  liq: [-.5, 0x2a7ab8, .86, 0], pal: [[-1, 0x6a5c32], [-.4, 0x245c2e], [.3, 0x377a3c], [1, 0x6fb45a]], wx: 'none', cloud: 0xf0fff4 },
     lava:   { fog: 0x3a140c, amb: .35, sun: [0xffb080, .65, [.3, 1, -.3]], hemi: [0xff9a6a, 0x1a0806, .4],  amp: 60, bias: 0,   liq: [-.42, 0xff6a1a, 1, 1], pal: [[-1, 0x140a08], [-.3, 0x2a1a17], [.4, 0x4a342e], [1, 0x6e4c42]], wx: 'ash', cloud: 0x3a2a2a },
     city:   { fog: 0x0c1030, amb: .45, sun: [0x8fa0ff, .4, [.2, 1, .4]],   hemi: [0x6a7ad8, 0x05060e, .4],  amp: 0,  bias: 0,   pal: [[-1, 0x10142a], [1, 0x10142a]], wx: 'rain', cloud: 0x2a3050 },
-    space:  { fog: 0x04050f, amb: .45, sun: [0xffffff, .8, [.5, 1, .3]],   hemi: [0x9ab0ff, 0x101830, .45], wx: 'none' }
+    sakura: { fog: 0xb48aa8, amb: .18, sun: [0xfff0e6, 1.0, [-.75, .7, .45]], hemi: [0xffe0ee, 0x3a5a3a, .32], amp: 46, bias: .05, liq: [-.5, 0x4aa0d8, .88, 0], pal: [[-1, 0x6a6a48], [-.4, 0x4a8a4a], [.3, 0x6eae58], [1, 0xa4d67c]], wx: 'petal', cloud: 0xffe0ec },
+    candy:  { fog: 0xa86aa0, amb: .14, sun: [0xffffff, .8, [-.7, .75, .4]], hemi: [0xffe0f4, 0x7a3a6a, .26], amp: 44, bias: .05, liq: [-.5, 0x7a4426, .96, 0], pal: [[-1, 0x8a4a2a], [-.42, 0xd8609c], [0, 0xe884b4], [.45, 0xe8b070], [1, 0x70c8b0]], wx: 'candy', cloud: 0xffd4ec },
+    crystal: { fog: 0x140a2a, amb: .42, sun: [0xb8a0ff, .5, [.2, 1, .3]], hemi: [0x8a6aff, 0x08040e, .42], amp: 60, bias: 0, liq: [-.45, 0x2ad8c8, 1, 1], pal: [[-1, 0x120a24], [-.2, 0x241446], [.4, 0x3a2466], [1, 0x5a3a8a]], wx: 'spark' },
+    aurora: { fog: 0x0c1838, amb: .36, sun: [0xa8c8ff, .55, [-.4, 1, .3]], hemi: [0x70ffc0, 0x081020, .42], amp: 50, bias: -.32, jit: .03, boat: true, liq: [0, 0x0e2c58, .9, 0], pal: [[-1, 0x0a2040], [-.05, 0x3a6a9a], [.05, 0xbcd8ee], [1, 0xeaf6ff]], wx: 'snow', cloud: 0x58ffb0, cloudA: 1.6 },
+    swamp:  { fog: 0x22382c, amb: .4, sun: [0xc0e0b0, .5, [-.3, 1, .2]], hemi: [0x80b090, 0x0a100a, .36], amp: 36, bias: -.22, boat: true, liq: [0, 0x263e2a, .93, 0], pal: [[-1, 0x1c2a1c], [-.02, 0x34482c], [.12, 0x486034], [1, 0x6a8448]], wx: 'wisp', cloud: 0x4a6050 },
+    undersea: { fog: 0x0a3a5a, amb: .36, sun: [0x90e8ff, .7, [0, 1, .2]], hemi: [0x60d0ff, 0x042030, .46], amp: 56, bias: 0, pal: [[-1, 0x154656], [-.2, 0x2a6a70], [.4, 0x6a9a80], [1, 0xc8c090]], wx: 'bubble', cloud: 0x2a86a8 },
+    cloud:  { fog: 0x6aa6e4, amb: .12, sun: [0xfff4d8, .8, [-.7, .75, .4]], hemi: [0xe8f2ff, 0x6a8cc8, .26], amp: 74, bias: -.1, jit: .02, liq: [-.5, 0x5e9ee4, 1, 1], pal: [[-1, 0x4a7cc8], [-.35, 0x7aa6e0], [.25, 0xb4cef0], [1, 0xe4eefc]], wx: 'none', cloud: 0xffffff },
+    factory: { fog: 0x38322e, amb: .32, sun: [0xffd0a0, .7, [-.5, .8, .3]], hemi: [0xc0a890, 0x1a1410, .36], amp: 0, bias: 0, pal: [[-1, 0x34363e], [1, 0x34363e]], wx: 'ash', cloud: 0x4a4440 },
+    cyber:  { fog: 0x06041a, amb: .5, sun: [0x9fa0ff, .4, [.2, 1, .4]], hemi: [0x8a6aff, 0x04030c, .4], amp: 0, bias: 0, pal: [[-1, 0x0a0824], [1, 0x0a0824]], wx: 'data' },
+    moon:   { fog: 0x07070b, amb: .22, sun: [0xffffff, 1.15, [-.85, .5, .3]], hemi: [0x8090b0, 0x101014, .2], amp: 50, bias: 0, pal: [[-1, 0x44464e], [-.2, 0x62646c], [.4, 0x84868e], [1, 0xacaeb6]], wx: 'none' },
+    flagship: { fog: 0x1a0a14, amb: .42, sun: [0xff9a80, .6, [-.4, 1, .3]], hemi: [0xff7868, 0x0a0408, .42], amp: 0, bias: 0, pal: [[-1, 0x221e2a], [1, 0x221e2a]], wx: 'ember' },
+    void:   { isSpace: true, fog: 0x0a0308, amb: .45, sun: [0xffc0a0, .8, [.5, 1, .3]], hemi: [0xff8a9a, 0x180810, .45], wx: 'none', tint: [0xff5a6a, 0x8a3aff], hole: true },
+    space:  { isSpace: true, tint: [0x6a8cff, 0xb070ff], fog: 0x04050f, amb: .45, sun: [0xffffff, .8, [.5, 1, .3]],   hemi: [0x9ab0ff, 0x101830, .45], wx: 'none' }
   };
   const K1 = PI * 2 / TL;
   const hBase = (x, z) => Math.sin(z * K1 + x * .006) * .5 + Math.sin(z * K1 * 2 - x * .011 + 1.3) * .3 + Math.sin(x * .017 + z * K1 * 3 + .7) * .2;   // 沿前进方向可循环
@@ -2168,6 +2465,77 @@ const R = (() => {
       inst(new T.CylinderGeometry(3.5, 3.5, 28, 6), lam(0x3f8a48), c.map(q => [q[0], q[1] + 14 * q[3], q[2], q[3]]));
       inst(new T.BoxGeometry(14, 3.5, 3.5), lam(0x3f8a48), c.map(q => [q[0], q[1] + 17 * q[3], q[2], q[3]]));
       inst(new T.CylinderGeometry(20, 30, 30, 6), lam(0xb8824a), spots(8, .1, 2).map(q => [q[0], q[1] + 13, q[2], q[3]]));
+    } else if (key === 'sakura') {
+      const s = spots(84, -.3, 2), bl = q => [q[0], q[1] + 27 * q[3], q[2], q[3], q[3] * .8, q[3], rand(0, 6)];
+      inst(new T.CylinderGeometry(2.4, 3.6, 24, 5), lam(0x6a4a3a), s.map(q => [q[0], q[1] + 11 * q[3], q[2], q[3]]));
+      inst(new T.IcosahedronGeometry(15, 0), lam(0xff9ec4), s.filter((q, i) => i % 2).map(bl));
+      inst(new T.IcosahedronGeometry(15, 0), lam(0xffc8de), s.filter((q, i) => !(i % 2)).map(bl));
+      inst(new T.DodecahedronGeometry(9, 0), lam(0x8a9aa0), spots(18, -.3, 2).map(q => [q[0], q[1] + 3, q[2], q[3], q[3] * .7, q[3], rand(0, 6)]));
+    } else if (key === 'candy') {
+      const s = spots(64, -.3, 2);
+      inst(new T.CylinderGeometry(1.5, 1.5, 36, 5), lam(0xffffff), s.map(q => [q[0], q[1] + 18 * q[3], q[2], q[3]]));
+      [0xff5a8a, 0x5ad0ff, 0xffd24a, 0x8aee7a].forEach((c, ci) => inst(new T.SphereGeometry(11, 10, 8), lam(c), s.filter((q, i) => i % 4 === ci).map(q => [q[0], q[1] + 40 * q[3], q[2], q[3], q[3], q[3] * .4])));
+      inst(new T.DodecahedronGeometry(10, 0), lam(0xc890ff), spots(18, -.3, 2).map(q => [q[0], q[1] + 4, q[2], q[3], q[3] * .8, q[3], rand(0, 6)]));
+      inst(new T.DodecahedronGeometry(10, 0), lam(0xff7a5a), spots(14, -.3, 2).map(q => [q[0], q[1] + 4, q[2], q[3], q[3] * .8, q[3], rand(0, 6)]));
+      inst(new T.ConeGeometry(10, 24, 8), lam(0xfff4dc), spots(14, .1, 2).map(q => [q[0], q[1] + 11 * q[3], q[2], q[3]]));
+    } else if (key === 'crystal') {
+      const gm = (c, k) => new T.MeshLambertMaterial({ color: c, emissive: c, emissiveIntensity: k });
+      [[0x5af0ff, 24], [0xff6ae0, 20], [0xb48aff, 16]].forEach(([c, n]) => inst(new T.OctahedronGeometry(13, 0), gm(c, .6), spots(n + 8, -.3, 2).map(q => [q[0], q[1] + 16 * q[3], q[2], q[3] * .8, q[3] * 2.4, q[3] * .8, rand(0, 6)])));
+      inst(new T.DodecahedronGeometry(13, 0), lam(0x3a2a5a), spots(30, -2, 2).map(q => [q[0], q[1] + 4, q[2], q[3], q[3] * .7, q[3], rand(0, 6)]));
+    } else if (key === 'aurora') {
+      inst(new T.ConeGeometry(9, 36, 5), lam(0xd0ecff), spots(40, .08, 2).map(q => [q[0], q[1] + 16 * q[3], q[2], q[3], q[3], q[3], rand(0, 6)]));
+      inst(new T.DodecahedronGeometry(12, 0), lam(0xa8d0f0), spots(24, .05, 2).map(q => [q[0], q[1] + 4, q[2], q[3], q[3] * .7, q[3], rand(0, 6)]));
+    } else if (key === 'swamp') {
+      const s = spots(46, -.02, 2);
+      inst(new T.CylinderGeometry(1.4, 2.8, 38, 5), lam(0x3a3028), s.map(q => [q[0], q[1] + 18 * q[3], q[2], q[3]]));
+      inst(new T.BoxGeometry(18, 1.6, 1.6), lam(0x3a3028), s.map(q => [q[0], q[1] + 28 * q[3], q[2], q[3], q[3], q[3], rand(0, 6)]));
+      inst(new T.ConeGeometry(2, 15, 4), lam(0x5a7a3a), spots(60, -.08, .12).map(q => [q[0], q[1] + 7, q[2], q[3]]));
+      inst(new T.CylinderGeometry(8, 8, .8, 8), lam(0x4a8a4a), spots(30, -2, -.1).map(q => [q[0], GY + .8, q[2], q[3]]));
+      inst(new T.SphereGeometry(3, 8, 6), new T.MeshBasicMaterial({ color: 0xa8ffb8 }), spots(26, -2, 2).map(q => [q[0], Math.max(q[1], GY) + rand(14, 30), q[2], q[3]]));
+    } else if (key === 'undersea') {
+      [[0xff7aa0, 18], [0xffa050, 16], [0xb070e0, 14]].forEach(([c, n]) => inst(new T.ConeGeometry(8, 22, 6), lam(c), spots(n, -2, 2).map(q => [q[0], q[1] + 10 * q[3], q[2], q[3], q[3], q[3], rand(0, 6)])));
+      inst(new T.IcosahedronGeometry(10, 1), lam(0xff9ab0), spots(16, -2, 2).map(q => [q[0], q[1] + 5, q[2], q[3], q[3] * .7, q[3]]));
+      inst(new T.BoxGeometry(3, 48, 3), lam(0x2a9a5a), spots(54, -2, 2).map(q => [q[0], q[1] + 23 * q[3], q[2], q[3], q[3], q[3], rand(0, 6)]));
+      inst(new T.DodecahedronGeometry(12, 0), lam(0x4a6a70), spots(24, -2, 2).map(q => [q[0], q[1] + 4, q[2], q[3], q[3] * .7, q[3], rand(0, 6)]));
+    } else if (key === 'cloud') {
+      const s = spots(22, .15, 2);
+      inst(new T.CylinderGeometry(5, 5, 62, 8), lam(0xf4e2a0), s.map(q => [q[0], q[1] + 28 * q[3], q[2], q[3]]));
+      inst(new T.BoxGeometry(16, 5, 16), lam(0xfff4c8), s.map(q => [q[0], q[1] + 60 * q[3], q[2], q[3]]));
+      inst(new T.BoxGeometry(30, 10, 30), lam(0xffffff), spots(10, .1, 2).map(q => [q[0], q[1] + 5, q[2], q[3], q[3], q[3], rand(0, 6)]));
+      inst(new T.SphereGeometry(11, 10, 8), lam(0xf0c850), spots(8, .3, 2).map(q => [q[0], q[1] + 12, q[2], q[3]]));
+    } else if (key === 'moon') {
+      const tg = new T.TorusGeometry(22, 4.5, 5, 14); tg.rotateX(PI / 2);
+      inst(tg, lam(0x74767e), spots(28, -2, 2).map(q => [q[0], q[1] + 1, q[2], q[3] * 1.2, q[3] * .5, q[3] * 1.2]));
+      const s = spots(10, -.2, .6);
+      inst(new T.SphereGeometry(17, 12, 8, 0, PI * 2, 0, PI / 2), lam(0xdfe8f4), s.map(q => [q[0], q[1], q[2], q[3]]));
+      inst(new T.BoxGeometry(24, 1.4, 12), lam(0x2a50c0), s.map(q => [q[0] + 34, q[1] + 9, q[2], q[3]]));
+      inst(new T.CylinderGeometry(.9, .9, 40, 5), lam(0xc8ccd4), spots(12, -2, 2).map(q => [q[0], q[1] + 20, q[2], q[3]]));
+      inst(new T.DodecahedronGeometry(10, 0), lam(0x8a8c94), spots(34, -2, 2).map(q => [q[0], q[1] + 3, q[2], q[3], q[3] * .7, q[3], rand(0, 6)]));
+    } else if (key === 'factory' || key === 'flagship') {
+      const fs = key === 'flagship', plates = [], tanks = [], towers = [], tips = [], strips = [];
+      for (let gx = -7; gx <= 7; gx++) for (let gz = -7; gz <= 7; gz++) {
+        const r = Math.random(), x = gx * 74 + rand(-6, 6), z = gz * 74 + rand(-6, 6);
+        if (r < .3) continue;
+        if (r < .68) { const h = rand(6, Math.abs(gx) < 2 ? 14 : 30); plates.push([x, GY + h / 2, z, rand(38, 60), h, rand(38, 60)]); }
+        else if (r < .88) { const h = rand(18, 34); tanks.push([x, GY + h / 2, z, rand(.8, 1.2), h / 26, rand(.8, 1.2)]); }
+        else if (Math.abs(gx) >= 2) { const h = rand(70, 115); towers.push([x, GY + h / 2, z, 1, h / 90, 1]); tips.push([x, GY + h + 3, z, 1]); }
+      }
+      inst(new T.BoxGeometry(1, 1, 1), lam(fs ? 0x383240 : 0x50545e), plates);
+      inst(new T.CylinderGeometry(20, 20, 26, 10), lam(fs ? 0x4a4250 : 0x8a6a48), tanks);
+      inst(new T.CylinderGeometry(5, 8, 90, 8), lam(fs ? 0x2c2630 : 0x5a4640), towers);
+      inst(new T.SphereGeometry(5, 8, 6), new T.MeshBasicMaterial({ color: fs ? 0xff3030 : 0xff9a2a }), tips);
+      for (let gx = -7; gx <= 8; gx++) for (let z = -TL / 2; z < TL / 2; z += (fs ? 44 : 110)) strips.push([gx * 74 - 37, GY + 1, z, 1]);
+      inst(new T.BoxGeometry(fs ? 2.4 : 5, 1, fs ? 16 : 70), fs ? new T.MeshBasicMaterial({ color: 0xff3a3a }) : lam(0x9a7a3a), strips);
+    } else if (key === 'cyber') {
+      const bas = c => new T.MeshBasicMaterial({ color: c }), lz = [], lx = [], blocks = [], tops = [], cubes = [];
+      for (let gx = -7; gx <= 8; gx++) lz.push([gx * 74 - 37, GY + 1, 0, 1]);
+      for (let z = -TL / 2; z < TL / 2; z += 110) lx.push([0, GY + 1, z, 1]);
+      inst(new T.BoxGeometry(1.8, 1, TL), bas(0x20e0ff), lz); inst(new T.BoxGeometry(TW, 1, 1.8), bas(0xff30c0), lx);
+      for (let gx = -7; gx <= 7; gx++) for (let gz = -5; gz <= 4; gz++) { if (Math.random() < .62) continue; const w = rand(30, 50), h = Math.abs(gx) < 2 ? rand(8, 24) : rand(20, 90), x = gx * 74, z = gz * 110 + 55; blocks.push([x, GY + h / 2, z, w, h, w]); tops.push([x, GY + h + 1, z, w, 1.6, w]); }
+      inst(new T.BoxGeometry(1, 1, 1), lam(0x1a1446), blocks);
+      inst(new T.BoxGeometry(1, 1, 1), bas(0x20e0ff), tops.filter((q, i) => i % 2)); inst(new T.BoxGeometry(1, 1, 1), bas(0xff30c0), tops.filter((q, i) => !(i % 2)));
+      for (let i = 0; i < 16; i++) cubes.push([rand(-TW / 2, TW / 2), GY + rand(50, 110), rand(-TL / 2, TL / 2), rand(.6, 1.3)]);
+      inst(new T.BoxGeometry(10, 10, 10), bas(0xffe040), cubes);
     } else if (key === 'canyon') {
       inst(new T.CylinderGeometry(20, 32, 64, 7), lam(0x9a4c38), spots(16, .16, 2).map(q => [q[0], q[1] + 22, q[2], q[3], q[3], q[3], rand(0, 6)]));
       inst(new T.ConeGeometry(10, 52, 5), lam(0x70363a), spots(26, -.1, 2).map(q => [q[0], q[1] + 22 * q[3], q[2], q[3], q[3], q[3], rand(0, 6)]));
@@ -2198,11 +2566,16 @@ const R = (() => {
     }
   }
   let wxs = [];
+  const WX = {   // 天气 / 氛围粒子：m 运动方式，n 数量，c 颜色，s 大小，a 透明度
+    snow: { m: 'snow', n: 150, c: '255,255,255', s: 5, a: .55 }, rain: { m: 'rain', n: 130, c: '170,200,255', s: 4, a: .7 }, ash: { m: 'ash', n: 70, c: '255,140,50', s: 8, a: .7 }, dust: { m: 'dust', n: 70, c: '255,230,180', s: 5, a: .7 },
+    petal: { m: 'snow', n: 100, c: '255,170,205', s: 7, a: .85 }, candy: { m: 'snow', n: 70, c: '255,225,130', s: 6, a: .8 }, spark: { m: 'ash', n: 80, c: '200,150,255', s: 6, a: .75 }, wisp: { m: 'ash', n: 60, c: '170,255,170', s: 7, a: .6 },
+    bubble: { m: 'ash', n: 90, c: '190,235,255', s: 7, a: .5 }, data: { m: 'ash', n: 70, c: '90,230,255', s: 5, a: .7 }, ember: { m: 'ash', n: 70, c: '255,80,60', s: 7, a: .7 }, none: { m: 'none', n: 0, c: '255,255,255', s: 1, a: 0 }
+  };
   function buildStage(i) {
     if (stg) { scn.remove(stg.group); stg.group.traverse(o => { if (o.geometry) o.geometry.dispose(); if (o.material && o.material.dispose && o.material !== matU) o.material.dispose(); }); }
     scene = i;
-    const key = STAGES[i].ground || 'space', cfg = STG[key], group = new T.Group();
-    stg = { key, cfg, ground: key !== 'space', group, tiles: [], off: 0, clouds: [], sp: null };
+    const key = STAGES[i].ground || STAGES[i].sp || 'space', cfg = STG[key], group = new T.Group();
+    stg = { key, cfg, ground: !cfg.isSpace, group, tiles: [], off: 0, clouds: [], sp: null };
     scn.background = new T.Color(cfg.fog); scn.fog = stg.ground ? new T.Fog(cfg.fog, cpos.y * 1.7, cpos.y * 3.6) : null;
     amb.intensity = cfg.amb; sun.color.setHex(cfg.sun[0]); sun.intensity = cfg.sun[1]; sun.position.set(cfg.sun[2][0], cfg.sun[2][1], cfg.sun[2][2]);
     hemi.color.setHex(cfg.hemi[0]); hemi.groundColor.setHex(cfg.hemi[1]); hemi.intensity = cfg.hemi[2];
@@ -2214,13 +2587,13 @@ const R = (() => {
         const lm = cfg.liq[3] ? new T.MeshBasicMaterial({ color: cfg.liq[1] }) : new T.MeshPhongMaterial({ color: cfg.liq[1], transparent: true, opacity: cfg.liq[2], shininess: 90, specular: 0x9ac4e8 });
         const l = new T.Mesh(lg, lm); l.position.set(0, GY + cfg.liq[0] * cfg.amp, -600); group.add(l);
       }
-      for (let k = 0; k < 5; k++) {
-        const hi = k === 4, s = new T.Sprite(new T.SpriteMaterial({ map: cloudTex, color: cfg.cloud, transparent: true, opacity: hi ? .14 : .3, depthWrite: false, fog: false }));
+      for (let k = 0; k < (cfg.cloud === undefined ? 0 : 5); k++) {
+        const hi = k === 4, s = new T.Sprite(new T.SpriteMaterial({ map: cloudTex, color: cfg.cloud, transparent: true, opacity: Math.min(.7, (hi ? .14 : .3) * (cfg.cloudA || 1)), depthWrite: false, fog: false }));
         s.scale.set(hi ? 900 : rand(330, 520), hi ? 450 : rand(170, 260), 1); s.position.set(rand(-400, 400), hi ? 110 : GY + rand(75, 115), rand(-1500, 600));
         group.add(s); stg.clouds.push({ s, spd: hi ? 330 : rand(150, 200) });
       }
     } else {   // 太空轨道：星空、行星、星云、陨石带；每轮换一种配色
-      const th = Math.floor(Math.max(0, wave - 1) / (5 * STAGES.length)) % 3, tint = [[0x6a8cff, 0xb070ff], [0xff8a5a, 0xffc070], [0x5ad8b0, 0x5a9aff]][th];
+      const tint = cfg.tint;
       const sg = new T.BufferGeometry(), sa = new Float32Array(500 * 3);
       for (let k = 0; k < 500; k++) { sa[k * 3] = rand(-1100, 1100); sa[k * 3 + 1] = rand(-1300, -160); sa[k * 3 + 2] = rand(-1750, 1750); }
       sg.setAttribute('position', new T.BufferAttribute(sa, 3));
@@ -2230,22 +2603,23 @@ const R = (() => {
       for (let k = 0; k < 9; k++) { const x = rand(0, 256), y = rand(0, 256), r = rand(50, 120), gr = ng.createRadialGradient(x, y, 0, x, y, r), cc = new T.Color(tint[k % 2]); gr.addColorStop(0, 'rgba(' + (cc.r * 255 | 0) + ',' + (cc.g * 255 | 0) + ',' + (cc.b * 255 | 0) + ',.35)'); gr.addColorStop(1, 'rgba(0,0,0,0)'); ng.fillStyle = gr; ng.fillRect(0, 0, 256, 256); }
       const ng2 = new T.PlaneGeometry(5200, 5200); ng2.rotateX(-PI / 2);
       const neb = new T.Mesh(ng2, new T.MeshBasicMaterial({ map: new T.CanvasTexture(nc), fog: false, depthWrite: false })); neb.position.set(0, -1700, -700); group.add(neb);
-      const planet = new T.Mesh(new T.SphereGeometry(330, 40, 24), new T.MeshLambertMaterial({ color: tint[0] })); planet.position.set(-300, -980, -700); group.add(planet);
-      const ringG = new T.RingGeometry(420, 560, 64); ringG.rotateX(-PI / 2 + .35);
-      const pr = new T.Mesh(ringG, new T.MeshBasicMaterial({ color: tint[1], transparent: true, opacity: .35, side: T.DoubleSide, fog: false })); pr.position.copy(planet.position); group.add(pr);
+      const planet = new T.Mesh(new T.SphereGeometry(cfg.hole ? 250 : 330, 40, 24), cfg.hole ? new T.MeshBasicMaterial({ color: 0x000000, fog: false }) : new T.MeshLambertMaterial({ color: tint[0] })); planet.position.set(cfg.hole ? 0 : -300, -980, cfg.hole ? -500 : -700); group.add(planet);
+      const ringG = new T.RingGeometry(cfg.hole ? 270 : 420, cfg.hole ? 640 : 560, 64); ringG.rotateX(-PI / 2 + (cfg.hole ? .12 : .35));
+      const pr = new T.Mesh(ringG, new T.MeshBasicMaterial({ color: cfg.hole ? 0xc85a1c : tint[1], transparent: true, opacity: cfg.hole ? .5 : .35, side: T.DoubleSide, fog: false })); pr.position.copy(planet.position); group.add(pr);
+      if (cfg.hole) { const rg2 = new T.RingGeometry(250, 290, 64); rg2.rotateX(-PI / 2 + .12); const pr2 = new T.Mesh(rg2, new T.MeshBasicMaterial({ color: 0xfff2c0, side: T.DoubleSide, fog: false })); pr2.position.copy(planet.position); pr2.position.y += 2; group.add(pr2); }
       const moon = new T.Mesh(new T.SphereGeometry(70, 20, 14), new T.MeshLambertMaterial({ color: 0xb8c0d8 })); moon.position.set(330, -520, -250); group.add(moon);
       const d = new T.Object3D(), rocks = [0, 1].map(() => { const im = new T.InstancedMesh(new T.DodecahedronGeometry(16, 0), new T.MeshLambertMaterial({ color: 0x6a6478 }), 26); for (let k = 0; k < 26; k++) { d.position.set(rand(-700, 700), rand(-520, -190), rand(-1750, 1750)); d.rotation.set(rand(0, 6), rand(0, 6), 0); d.scale.setScalar(rand(.5, 2)); d.updateMatrix(); im.setMatrixAt(k, d.matrix); } im.frustumCulled = false; group.add(im); return im; });
       stg.sp = { stars, rocks, planet, moon, so: 0, ro: 0 };
     }
     scn.add(group);
-    wxs = []; const n = { snow: 150, rain: 130, ash: 70, dust: 70, none: 0 }[cfg.wx];
+    wxs = []; const n = WX[cfg.wx].n;
     for (let k = 0; k < n; k++) wxs.push({ x: rand(-420, 420), y: rand(-140, 150), z: rand(-900, 760), s: rand(.6, 1.4), ph: rand(0, 6) });
     for (const e of enemies) if (e.m3) { actors.delete(e.m3); scn.remove(e.m3); e.m3 = null; }   // 炮艇 / 坦克等随场景更换模型
   }
   function update(dt) {
     tNow += dt; bgMul = lerp(bgMul, bgMulT, 1 - Math.exp(-dt * 3));
     if (state === 'menu') menuT += dt;
-    const want = state === 'menu' ? Math.floor(menuT / 16) % (STAGES.length - 1) : stageOf(wave);
+    const want = state === 'menu' ? Math.floor(menuT / 14) % STAGES.length : state === 'victory' && vicT > 2.4 ? 17 : stageOf(wave);
     if (want !== sceneTarget) { sceneTarget = want; if (scene < 0) buildStage(want); else if (wipeT <= .7) wipeT = 1.4; }
     if (wipeT > 0) { const was = wipeT; wipeT -= dt; if (was > .7 && wipeT <= .7 && scene !== sceneTarget) buildStage(sceneTarget); }
     if (!stg) return;
@@ -2258,7 +2632,7 @@ const R = (() => {
       s.stars.forEach((p, i) => { p.position.z = -900 - i * 3500 + s.so + 1750; }); s.rocks.forEach((p, i) => { p.position.z = -900 - i * 3500 + s.ro + 1750; });
       s.planet.rotation.y += dt * .03; s.moon.position.z += 6 * dt; if (s.moon.position.z > 1200) s.moon.position.z = -1800;
     }
-    const k = stg.cfg.wx;
+    const k = WX[stg.cfg.wx].m;
     for (const p of wxs) {
       if (k === 'snow') { p.y -= (60 + p.s * 40) * dt; p.z += 150 * bgMul * dt; p.x += Math.sin(p.ph += dt * 2) * 30 * dt; }
       else if (k === 'rain') { p.y -= 620 * dt; p.z += 120 * dt; p.x -= 90 * dt; }
@@ -2269,6 +2643,7 @@ const R = (() => {
   }
 
   /* ---------- 初始化 ---------- */
+  const BSPIN = { 12: .8, 15: .6, 17: 1.3 };   // 会自转的 Boss
   const actors = new Set(), seen = new Set(), PBN = 220, WHITE = new T.Color(0xffffff), US = 1.22;   // US：空中单位的显示放大倍数
   let pb2, pbE, pbC;
   const bcCache = {}, HSL = { h: 0, s: 0, l: 0 };
@@ -2317,10 +2692,10 @@ const R = (() => {
   function actor(o, make) { let m = o.m3; if (!m) { m = o.m3 = make(); scn.add(m); actors.add(m); } seen.add(m); return m; }
   function makeEnemy(e) {
     if (e.ground) {
-      const g = new T.Group(), tur = mesh(e.type === 4 ? 'b4t' : 'g' + e.type + 't');
-      g.add(mesh(e.type === 4 ? 'b4' : e.type === 20 ? (stg && stg.key === 'ocean' ? 'boat' : 'g20b') : 'pad')); g.add(tur); g.userData.tur = tur; return g;
+      const g = new T.Group(), tur = mesh(e.type === 4 ? 'b' + e.bk + 't' : 'g' + e.type + 't');
+      g.add(mesh(e.type === 4 ? 'b' + e.bk : e.type === 20 ? (stg && stg.cfg.boat ? 'boat' : 'g20b') : 'pad')); g.add(tur); g.userData.tur = tur; return g;
     }
-    const fade = e.type === 11 || e.type === 26 || (e.type === 4 && e.bk === 1);
+    const fade = e.type === 11 || e.type === 26 || (e.type === 4 && (e.bk === 1 || BOSSES[e.bk].fade));
     const m = new T.Mesh(geo(e.type === 4 ? 'b' + e.bk : 'e' + e.type), fade ? matUT.clone() : matU); m.rotation.order = 'YXZ'; m.userData.fade = fade; return m;
   }
   function extras(e, t) {
@@ -2353,12 +2728,12 @@ const R = (() => {
     if (e.type === 4 && e.bk === 7) { for (const sx of [-34, 34]) pGlow(e.x + sx, e.y - 2, 9 + Math.sin(t * 12 + sx) * 3, '255,240,150', .75 * e.alpha, 10); }
     if (e.type === 16) for (let i = 0; i < 3; i++) { const q = 1 - ((t * .45 + i / 3) % 1); pRing(e.x, e.y, 24 + q * 110, '180,130,255', (1 - q) * .5, -2); }
     if (e.segs) for (let i = e.segs.length - 1; i >= 0; i--) {
-      const q = e.segs[i], m = pools.seg.get(), sc = .95 - i * .045; m.position.set(wx(q[0]), 0, wz(q[1])); m.rotation.set(0, t * 1.5 + i, 0); m.scale.setScalar(sc);
+      const sk = SPEC['seg' + e.bk] ? 'seg' + e.bk : 'seg', q = e.segs[i], m = (pools[sk] || (pools[sk] = new Pool(() => mesh(sk)))).get(), sc = e.orb ? 1 : .95 - i * .045; m.position.set(wx(q[0]), 0, wz(q[1])); m.rotation.set(0, t * 1.5 + i, 0); m.scale.setScalar(sc);
       pShadow(q[0], q[1], 16 * sc); if (e.hitT > 0) pGlow(q[0], q[1], 22, '255,255,255', .5, 8);
     }
   }
   function syncPlayer(t) {
-    const menu = state === 'menu'; let x = P.x, y = P.y, tilt = P.tilt, mode = P.mode;
+    const menu = state === 'menu', vic = state === 'victory'; let x = P.x, y = P.y, tilt = P.tilt, mode = P.mode;
     if (menu) { x = W / 2 + Math.sin(t * .6) * 46; y = H * .46 + Math.sin(t * .9) * 12; tilt = Math.cos(t * .6) * .6; mode = 'ship'; }
     const blink = !menu && P.inv > 0 && P.shield <= 0 && !(P.star > 0) && Math.floor(t * 14) % 2 === 0, poss = mode === 'possessed';
     if (poss && possKey !== P.ghost.type) { if (possM) scn.remove(possM); possKey = P.ghost.type; possM = new T.Mesh(geo('e' + possKey), matU); possM.rotation.order = 'YXZ'; scn.add(possM); }
@@ -2417,8 +2792,9 @@ const R = (() => {
         } else {
           m.position.set(wx(e.x), 0, wz(e.y)); m.scale.setScalar(e.sc * US);
           if (e.type === 18) m.rotation.set(e.rot * .7, e.rot, 0);
-          else m.rotation.set(0, -e.rot + (e.type === 12 || e.type === 16 ? t * 2 : 0), (e.ai === 'arc' || e.ai === 'dive' || e.ai === 'cargo' || e.type === 4 || e.type === 17) ? 0 : clamp((e.vx || 0) / 240, -.55, .55));
+          else m.rotation.set(0, -e.rot + (e.type === 12 || e.type === 16 ? t * 2 : e.type === 4 ? (BSPIN[e.bk] || 0) * t : 0), (e.ai === 'arc' || e.ai === 'dive' || e.ai === 'cargo' || e.type === 4 || e.type === 17) ? 0 : clamp((e.vx || 0) / 240, -.55, .55));
           if (m.userData.fade) m.material.opacity = e.alpha;
+          if (e.type === 4 && e.bk === 14) { const wq = Math.sin(t * 5) * .09, s0 = e.sc * US; m.scale.set(s0 * (1 + wq), s0 * (1 - wq), s0 * (1 + wq)); }   // 果冻王：一颤一颤
           if (e.alpha > .5) pShadow(e.x, e.y, e.r * (e.type === 4 ? 1.5 : 1.1));
         }
         extras(e, t);
@@ -2450,13 +2826,20 @@ const R = (() => {
       for (const r of rings) { if (r.life < 0) continue; pRing(r.x, r.y, r.r, r.rgb, 1 - r.life / r.max, 2); }
       for (const nv of novas) { const a = clamp(1 - nv.r / 800, 0, 1); pRing(nv.x, nv.y, nv.r, '217,246,255', a, 2); pRing(nv.x, nv.y, nv.r * .93, '120,225,255', a * .6, 2); pRing(nv.x, nv.y, nv.r * .84, '120,225,255', a * .3, 2); }
       for (const h of hazards) {
-        if (h.t < h.warn) { const k = h.t / h.warn; pBeam(h.x, -60, h.x, H + 80, 2 + h.w * k, h.rgb, .15 + .3 * k + (k > .75 ? .2 * Math.sin(t * 50) : 0), -1, 1); }
-        else { const a = clamp((h.warn + h.dur - h.t) / .15, 0, 1); pBeam(h.x, -60, h.x, H + 80, h.w * 1.25, h.rgb, .8 * a, 0, 10); pBeam(h.x, -60, h.x, H + 80, h.w * .45, '255,255,255', .9 * a, 1, 11); }
+        const k = Math.min(1, h.t / h.warn), wa = .15 + .3 * k + (k > .75 ? .2 * Math.sin(t * 50) : 0), a = clamp((h.warn + h.dur - h.t) / .15, 0, 1);
+        if (h.cx !== undefined) {   // 圆形落点
+          if (h.t < h.warn) { pRing(h.cx, h.cy, h.r, h.rgb, .5 + .4 * k, -1); pRing(h.cx, h.cy, h.r * (1.9 - .9 * k), '255,255,255', .25 + .5 * k, -1); pGlow(h.cx, h.cy, h.r * (.5 + k * .7), h.rgb, wa, -2); }
+          else { pGlow(h.cx, h.cy, h.r * 2.3, h.rgb, .9 * a, 2); pGlow(h.cx, h.cy, h.r * 1.2, '255,255,255', a, 3); pRing(h.cx, h.cy, h.r * (1 + (1 - a) * .6), '255,255,255', a, 2); }
+        } else if (h.hy !== undefined) {   // 横向光束
+          if (h.t < h.warn) pBeam(-40, h.hy, W + 40, h.hy, (2 + h.w * k) * ZS, h.rgb, wa, -1, 1);
+          else { pBeam(-40, h.hy, W + 40, h.hy, h.w * 1.25 * ZS, h.rgb, .8 * a, 0, 10); pBeam(-40, h.hy, W + 40, h.hy, h.w * .45 * ZS, '255,255,255', .9 * a, 1, 11); }
+        } else if (h.t < h.warn) pBeam(h.x, -60, h.x, H + 80, 2 + h.w * k, h.rgb, wa, -1, 1);
+        else { pBeam(h.x, -60, h.x, H + 80, h.w * 1.25, h.rgb, .8 * a, 0, 10); pBeam(h.x, -60, h.x, H + 80, h.w * .45, '255,255,255', .9 * a, 1, 11); }
       }
     } else pb.count = pb2.count = pbE.count = pbC.count = 0;
     ebPts.commit(); fxPts.commit();
-    const wk = stg.cfg.wx, wc = wk === 'snow' ? WHITE : wk === 'rain' ? rgbC('170,200,255') : wk === 'ash' ? rgbC('255,140,50') : rgbC('255,230,180');
-    for (const p of wxs) wxPts.add(p.x, p.y, p.z, wk === 'rain' ? 4 : wk === 'ash' ? 8 * p.s : 5 * p.s, wc, wk === 'snow' ? .55 : .7);
+    const wd = WX[stg.cfg.wx], wc = rgbC(wd.c);
+    for (const p of wxs) wxPts.add(p.x, p.y, p.z, wd.m === 'rain' ? wd.s : wd.s * p.s, wc, wd.a);
     wxPts.commit();
     for (const m of actors) if (!seen.has(m)) { scn.remove(m); actors.delete(m); }
     renderer.render(scn, cam);
@@ -2509,7 +2892,7 @@ function resize() {
 let lastT = performance.now(), glOK = true;
 function frame(now) {
   const dt = Math.min(.05, Math.max(0, (now - lastT) / 1000)); lastT = now;
-  update(dt);
+  for (let i = 0; i < dbgSpeed; i++) update(dt);
   R.render(now / 1000);
   drawHud2D(now / 1000);
   if (state === 'playing') updateControlsUI();
@@ -2529,7 +2912,7 @@ if (/[?&]debug/.test(location.search)) {
   window.__g = {
     P, input, get state() { return state; }, get score() { return score; }, get wave() { return wave; }, get H() { return H; }, get scores() { return scores; },
     enemies, bullets, ebullets, powerups, particles, spawnEnemy, spawnPowerup, startGame, pauseGame, resumeGame, enterSoul, hurtPlayer, endGame,
-    setScore: v => { score = v; }, setWave: v => { wave = v; waveState = 'pause'; waveT = .1; }, killEnemy, useSkill,
+    setScore: v => { score = v; }, setSpeed: v => { dbgSpeed = v; }, get gameTime() { return gameTime; }, get deaths() { return deaths; }, setWave: v => { wave = v; DL = levelOf(v); waveState = 'pause'; waveT = .1; }, WPS, NSTAGE, levelOf, stageOf, killEnemy, useSkill,
     Sfx, SKILL, ET, get hurtFlash() { return hurtFlash; }, get shake() { return shake; },
     setDiff, get diff() { return diffKey; },
     hazards, PERKS, offerPerks, pickPerk, get perks() { return perks; }, get combo() { return combo; }, get grazes() { return grazes; }, BOSSES, STAGES, get scene() { return scene; }, R,
