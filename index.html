@@ -1179,7 +1179,7 @@ let hazards = [];   // Boss 光束等带预警的危险区
 const PERKS = [
   { id: 'dmg',    name: '穿甲弹芯', desc: '所有伤害 +15%',            max: 4, rgb: '255,120,90' },
   { id: 'rate',   name: '速射机构', desc: '射速 +12%',                max: 4, rgb: '255,215,80' },
-  { id: 'energy', name: '聚气加速', desc: 'B 键技能聚气速度 +50%',    max: 4, rgb: '110,220,255' },
+  { id: 'energy', name: '聚气加速', desc: 'B 键技能聚气速度 +16%（满级约 18 秒一次）', max: 4, rgb: '110,220,255' },
   { id: 'speed',  name: '矢量引擎', desc: '移动速度 +8%',             max: 3, rgb: '140,255,200' },
   { id: 'luck',   name: '幸运星',   desc: '道具掉落 +30%',            max: 3, rgb: '255,180,230' },
   { id: 'magnet', name: '磁力场',   desc: '道具吸附范围 +80%',        max: 2, rgb: '190,150,255' },
@@ -1774,7 +1774,7 @@ function updatePlayer(dt) {
 
   P.inv = Math.max(0, P.inv - dt); P.shield = Math.max(0, P.shield - dt);
   P.speedT = Math.max(0, P.speedT - dt); P.od = Math.max(0, P.od - dt); P.muz = Math.max(0, P.muz - dt);
-  if (P.mode !== 'soul') P.energy = Math.min(100, P.energy + dt * 3.4 * (1 + pk('energy') * .5));
+  if (P.mode !== 'soul') P.energy = Math.min(100, P.energy + dt * 3.4 * (1 + pk('energy') * .16));
 
   // 魂能不会随时间减少：只在夺舍的飞机被击毁时消耗（见 ghostDie），击毁敌机可回复
   // 速度提升：尾迹
@@ -1933,7 +1933,7 @@ function killEnemy(e) {
   const gain = Math.round(def.score * (e.elite ? 3 : 1) * comboMul());
   score += gain; popup(e.x, e.y - 8, '+' + gain, e.type === 4 || e.elite ? '#ffd24a' : '#ffe28a', e.type === 4 ? 20 : e.elite ? 16 : 13);
   kills++;
-  if (P.mode !== 'soul') P.energy = Math.min(100, P.energy + (e.type === 4 ? 0 : 4 * (1 + pk('energy') * .5)));
+  if (P.mode !== 'soul') P.energy = Math.min(100, P.energy + (e.type === 4 ? 0 : 4 * (1 + pk('energy') * .16)));
   if (P.mode === 'possessed') P.soulE = Math.min(100, P.soulE + (e.type === 4 ? 25 : 6));
   if (e.type === 4) {
     for (let i = 0; i < 9; i++) later.push({ t: i * .11, fn: () => { explode(e.x + rand(-50, 50), e.y + rand(-34, 34), pick(['255,120,160', '255,200,100', '255,255,255']), 22, 300); addShake(10); Sfx.play('bigboom'); } });
@@ -2213,7 +2213,7 @@ function updateEBullets(dt) {
       if (dx * dx + dy * dy < 1) { if (P.shield > 0 || P.inv <= 0) { b.dead = true; hurtPlayer(); } }
       else if (!b.gz && b.kind !== 'mine') {   // 擦弹：子弹贴身掠过，奖励少量得分和星爆能量
         const gx = (b.x - P.x) / (ax + b.r + 15), gy = (b.y - P.y) / (ay + b.r + 15);
-        if (gx * gx + gy * gy < 1) { b.gz = true; grazes++; score += 3; P.energy = Math.min(100, P.energy + 1.5 * (1 + pk('energy') * .5)); spark(b.x, b.y, '255,255,255', 2); Sfx.play('graze'); }
+        if (gx * gx + gy * gy < 1) { b.gz = true; grazes++; score += 3; P.energy = Math.min(100, P.energy + 1.5 * (1 + pk('energy') * .16)); spark(b.x, b.y, '255,255,255', 2); Sfx.play('graze'); }
       }
     }
   }
