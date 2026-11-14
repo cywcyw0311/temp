@@ -427,6 +427,7 @@ const PERKS = [
   { id: 'dmg',    name: '穿甲弹芯', desc: '所有伤害 +15%',            max: 4, rgb: '255,120,90' },
   { id: 'rate',   name: '速射机构', desc: '射速 +12%',                max: 4, rgb: '255,215,80' },
   { id: 'energy', name: '聚气加速', desc: 'B 键技能聚气速度 +16%（满级约 18 秒一次）', max: 4, rgb: '110,220,255' },
+  { id: 'nova',   name: '星爆护体', desc: '星爆后的无敌时间 +1 秒（基础 3 秒）', max: 3, rgb: '255,235,140' },
   { id: 'speed',  name: '矢量引擎', desc: '移动速度 +8%',             max: 3, rgb: '140,255,200' },
   { id: 'luck',   name: '幸运星',   desc: '道具掉落 +30%',            max: 3, rgb: '255,180,230' },
   { id: 'magnet', name: '磁力场',   desc: '道具吸附范围 +80%',        max: 2, rgb: '190,150,255' },
@@ -442,7 +443,7 @@ let bullets = [], ebullets = [], enemies = [], powerups = [], particles = [], ri
 const P = {
   x: W / 2, y: 500, vx: 0, vy: 0, tilt: 0, mode: 'ship',   // ship | soul | possessed | dead
   lives: 3, wt: 'normal', wl: { normal: 1, laser: 0, lock: 0, blast: 0 }, pod: 0, podX: [0, 0], podY: [0, 0], podCd: [0, .5],
-  extra: 0, shield: 0, speedT: 0, inv: 0, fireCd: 0, energy: 0, od: 0,
+  extra: 0, shield: 0, speedT: 0, inv: 0, star: 0, fireCd: 0, energy: 0, od: 0,
   ghost: null, soulE: 100, muz: 0, muzList: SHOTS[1], muzSpr: null, trailT: 0, wispT: 0
 };
 
@@ -1015,7 +1016,7 @@ function hurtPlayer() {
   if (P.lives <= 0) enterSoul();
 }
 function enterSoul() {
-  P.mode = 'soul'; P.lives = 0; P.soulE = 100; P.ghost = null; P.inv = 0; P.extra = 0; P.od = 0;
+  P.mode = 'soul'; P.lives = 0; P.soulE = 100; P.ghost = null; P.inv = 0; P.star = 0; P.extra = 0; P.od = 0;
   if (pk('keep')) {   // 黑匣子：保留一半
     for (const k2 in P.wl) P.wl[k2] = Math.max(k2 === 'normal' ? 1 : 0, Math.floor(P.wl[k2] / 2));
     if (!P.wl[P.wt]) P.wt = 'normal'; P.pod = Math.floor(P.pod / 2);
@@ -1058,6 +1059,7 @@ function revive() {
   whiteFlash = .5; Sfx.play('revive'); vibrate(80);
   showBanner('复活！', '重返战场', '#ffe28a', 2);
 }
+const NOVA_INV = 3;   // 释放星爆后的基础无敌时间（秒）
 function useSkill() {
   if (state !== 'playing' || resumeT > 0 || P.mode === 'dead') return;
   if (P.mode === 'soul' || P.energy < 100) {
@@ -1065,9 +1067,12 @@ function useSkill() {
   }
   P.energy = 0;
   if (P.mode === 'ship') {
+    // 星爆：冲击波扫过之处，Boss 以外的敌人全部秒杀、敌弹全部清除；自己获得几秒无敌（「星爆护体」强化可延长）
+    const invT = NOVA_INV + pk('nova');
     novas.push({ x: P.x, y: P.y, r: 14, hit: new Set() });
-    whiteFlash = .35; addShake(10); Sfx.play('nova'); vibrate(60);
-    popup(P.x, P.y - 40, '星爆！', '#9deaff', 16);
+    hazards.length = 0; P.star = invT; P.starMax = invT; P.inv = Math.max(P.inv, invT);
+    whiteFlash = .45; addShake(12); Sfx.play('nova'); vibrate(60);
+    popup(P.x, P.y - 40, '星爆！无敌 ' + invT + ' 秒', '#fff0a0', 16, 1.4);
   } else {
     P.od = 4; Sfx.play('pickup'); popup(P.x, P.y - 40, '超载！', '#ff9a5a', 16); vibrate(40);
     rings.push({ x: P.x, y: P.y, r: 10, grow: 200, life: 0, max: .45, rgb: '255,150,80', w: 3 });
@@ -1102,7 +1107,7 @@ function updatePlayer(dt) {
   P.y = clamp(P.y + P.vy * dt, minY(), maxY());
   P.tilt = lerp(P.tilt, clamp(P.vx / (BASE_SPEED * 1.2), -1, 1), 1 - Math.exp(-dt * 12));
 
-  P.inv = Math.max(0, P.inv - dt); P.shield = Math.max(0, P.shield - dt);
+  P.inv = Math.max(0, P.inv - dt); P.star = Math.max(0, P.star - dt); P.shield = Math.max(0, P.shield - dt);
   P.speedT = Math.max(0, P.speedT - dt); P.od = Math.max(0, P.od - dt); P.muz = Math.max(0, P.muz - dt);
   if (P.mode !== 'soul') P.energy = Math.min(100, P.energy + dt * 3.4 * (1 + pk('energy') * .16));
 
@@ -1579,10 +1584,15 @@ function updateEBullets(dt) {
 }
 function updateNovas(dt) {
   for (const n of novas) {
-    n.r += 880 * dt;
+    n.r += 1500 * dt;
     for (const e of enemies) {
       if (e.dead || n.hit.has(e)) continue;
-      if (Math.hypot(e.x - n.x, e.y - n.y) < n.r + e.r * .5) { n.hit.add(e); hitEnemy(e, e.type === 4 ? 30 : 9, e.x, e.y, '150,235,255'); }
+      if (e.y < -e.r - 6 || e.y > H + e.r || e.x < -e.r - 6 || e.x > W + e.r + 6) continue;   // 只对屏幕上的敌人生效
+      if (Math.hypot(e.x - n.x, e.y - n.y) < n.r + e.r * .5) {
+        n.hit.add(e);
+        if (e.type === 4) hitEnemy(e, 30, e.x, e.y, '150,235,255');   // Boss 只受到重创
+        else { const en = P.energy; e.shield = 0; spark(e.x, e.y, '150,235,255', 6); killEnemy(e); P.energy = en; }   // 其余敌人（含护盾舰、隐形机、陨石、地面部队）直接秒杀；这些击杀不给星爆充能
+      }
     }
     for (const b of ebullets) {
       if (!b.dead && Math.hypot(b.x - n.x, b.y - n.y) < n.r) { b.dead = true; spark(b.x, b.y, b.rgb, 2); }
@@ -1732,6 +1742,7 @@ function drawHUD(t) {
   if ((P.mode === 'ship' || P.mode === 'possessed') && P.pod > 0) { pill(px, y2, 62, '导弹 Lv' + P.pod, P.pod / 3, '170,225,255'); px += 68; }
   if (P.shield > 0) { pill(px, y2, 62, '护盾 ' + Math.ceil(P.shield) + 's', P.shield / 10, '90,255,160'); px += 68; }
   if (P.speedT > 0) { pill(px, y2, 62, '加速 ' + Math.ceil(P.speedT) + 's', P.speedT / 10, '255,215,80'); px += 68; }
+  if (P.star > 0) { pill(px, y2, 62, '无敌 ' + Math.ceil(P.star) + 's', P.star / (P.starMax || NOVA_INV), '255,235,140'); px += 68; }
   if (P.od > 0) { pill(px, y2, 62, '超载 ' + Math.ceil(P.od) + 's', P.od / 4, '255,130,60'); px += 68; }
   if (combo >= 3) {   // 连击
     const k = clamp(comboT / 2.6, 0, 1), txt = combo + ' 连击';
@@ -1834,7 +1845,7 @@ function resetWorld() {
   shake = hurtFlash = whiteFlash = 0; banner = null; resumeT = 0;
   Object.assign(P, { x: W / 2, y: H - 190, vx: 0, vy: 0, tilt: 0, mode: 'ship', lives: D.lives, wt: 'normal', wl: { normal: 1, laser: 0, lock: 0, blast: 0 }, pod: 0,
     podX: [W / 2, W / 2], podY: [H - 190, H - 190], podCd: [0, .5], extra: 0, shield: 0, speedT: 0, inv: 1.5,
-    fireCd: 0, energy: 25, od: 0, ghost: null, soulE: 100, muz: 0, muzList: SHOTS[1], muzSpr: null, trailT: 0, wispT: 0 });
+    fireCd: 0, energy: 25, od: 0, star: 0, ghost: null, soulE: 100, muz: 0, muzList: SHOTS[1], muzSpr: null, trailT: 0, wispT: 0 });
   input.aLock = false; input.aIgnore = false;
   showBanner('第 1 关', STAGES[0].name, '#9deaff', 2.2);
 }
@@ -2349,7 +2360,7 @@ const R = (() => {
   function syncPlayer(t) {
     const menu = state === 'menu'; let x = P.x, y = P.y, tilt = P.tilt, mode = P.mode;
     if (menu) { x = W / 2 + Math.sin(t * .6) * 46; y = H * .46 + Math.sin(t * .9) * 12; tilt = Math.cos(t * .6) * .6; mode = 'ship'; }
-    const blink = !menu && P.inv > 0 && P.shield <= 0 && Math.floor(t * 14) % 2 === 0, poss = mode === 'possessed';
+    const blink = !menu && P.inv > 0 && P.shield <= 0 && !(P.star > 0) && Math.floor(t * 14) % 2 === 0, poss = mode === 'possessed';
     if (poss && possKey !== P.ghost.type) { if (possM) scn.remove(possM); possKey = P.ghost.type; possM = new T.Mesh(geo('e' + possKey), matU); possM.rotation.order = 'YXZ'; scn.add(possM); }
     plG.visible = mode === 'ship' && !blink; ghostM.visible = mode === 'soul'; if (possM) possM.visible = poss && !blink;
     if (mode === 'dead') return;
@@ -2372,6 +2383,10 @@ const R = (() => {
     if (menu) return;
     if (P.pod > 0 && mode !== 'soul') for (let i = 0; i < 2; i++) { const m = pools.pod.get(); m.position.set(wx(P.podX[i]), 0, wz(P.podY[i] + Math.sin(t * 5 + i * 2) * 1.5)); m.visible = !blink; pGlow(P.podX[i], P.podY[i] + 12, 6, '110,190,255', blink ? 0 : .7, 0); }
     if (P.muz > 0 && mode !== 'soul') { const a = P.muz / .07, fs = Math.min(1, 1.15 / Math.sqrt(P.muzList.length)); for (const m of P.muzList) pGlow(x + m[0], y - (poss ? lift * .8 : 34), 16 * (.65 + a * .5) * fs, P.muzRgb || '255,225,140', a, 3); }
+    if (P.star > 0 && mode === 'ship') {   // 星爆后的无敌：金色光罩，快结束时闪烁提醒
+      const fl = P.star < .8 ? (Math.floor(t * 12) % 2 ? .3 : 1) : 1, q = (t * 1.6) % 1;
+      pBubble(x, y, 42, '255,235,140', .24 * fl, 0); pRing(x, y, 42 + Math.sin(t * 10) * 1.5, '255,245,170', .95 * fl, 0); pRing(x, y, 24 + q * 22, '255,255,255', (1 - q) * .5 * fl, 0); pGlow(x, y, 60, '255,225,120', .3 * fl, -3);
+    }
     if (P.shield > 0) { const fl = P.shield < 2.2 ? (Math.floor(t * 10) % 2 ? .35 : 1) : 1, rr2 = poss ? lift + 14 : 36; pBubble(x, y, rr2, '90,255,170', .3 * fl, 0); pRing(x, y, rr2, '170,255,210', .8 * fl, 0); }
     if (mode === 'soul') {   // 高亮最近的可夺舍目标
       let best = null, bd = 150; for (const e of enemies) { if (e.dead || !SKILL[e.type] || e.y < 0) continue; const d = Math.hypot(e.x - P.x, e.y - P.y); if (d < bd) { bd = d; best = e; } }
