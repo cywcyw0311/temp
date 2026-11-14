@@ -182,7 +182,7 @@ ol.list li.empty{display:block;text-align:center;color:#7f93c4;padding:calc(var(
         <li><b>A</b>　射击；<b>长按</b>锁定连发，<b>再按</b>解除</li>
         <li><b>B</b>　能量满后释放「星爆」冲击波</li>
         <li><b>弹种道具</b>　激光 / 锁定 / 爆破弹，拾取即切换，等级独立；<b>吊舱</b>附带跟踪导弹</li>
-        <li><b>星区与 Boss</b>　每 5 波一个星区，Boss 各不相同；击败后<b>三选一强化</b>。连杀有<b>连击</b>加分</li>
+        <li><b>关卡</b>　每 5 波一关，7 种场景和 Boss；地面的炮台、坦克可击毁也可飞越；击败 Boss <b>三选一强化</b></li>
         <li class="soul"><b>阵亡</b>　化为灵魂，撞向敌机即可<b>夺舍</b>，获得它的速射技能；魂能不随时间减少，夺舍的飞机被击毁才消耗；<b>死亡后弹种等级清零</b></li>
       </ul>
     </div>
@@ -523,38 +523,61 @@ function orbSpr(rgb) {
 }
 
 /* ---- 玩家战机 ---- */
-const sprPlayer = mk(66, 76, g => {
-  // 引擎喷口
+const sprPlayer = mk(74, 88, g => {
+  // 双发喷口
   for (const sd of [-1, 1]) {
-    g.fillStyle = vgrad(g, 16, 28, '#39446e', '#0c1024'); rrp(g, sd * 8.5 - 4, 16, 8, 12, 2); g.fill();
-    g.strokeStyle = '#8fa6d8'; g.lineWidth = .8; g.stroke();
-    g.fillStyle = '#7fe6ff'; g.fillRect(sd * 8.5 - 2.6, 25.5, 5.2, 2.2);
+    g.fillStyle = vgrad(g, 24, 38, '#4a5478', '#0b0e20'); rrp(g, sd * 7 - 4.6, 24, 9.2, 14, 2.5); g.fill();
+    g.strokeStyle = '#9fb4e0'; g.lineWidth = .8; g.stroke();
+    g.fillStyle = '#ff9a3a'; g.fillRect(sd * 7 - 3.2, 35, 6.4, 2); g.fillStyle = '#ffe9a0'; g.fillRect(sd * 7 - 2, 35.4, 4, 1.2);
   }
-  // 尾翼
-  fillStroke(g, mirror([[3, 12], [11, 27], [6, 27], [2.5, 20]]), vgrad(g, 12, 27, '#3c59c8', '#111c56'), '#9db8ff', .8);
-  // 主翼（前掠翼尖）
-  fillStroke(g, mirror([[4, -8], [11, -3], [28, 11], [30, 20], [22, 18], [13, 23], [5, 19]]), vgrad(g, -8, 23, '#7aa5ff', '#182a80'), '#d5e4ff', 1);
-  fillStroke(g, mirror([[13, 4], [26, 14.5], [26.5, 17.5], [13, 11.5]]), '#ffcf40');
-  fillStroke(g, mirror([[13, 12.5], [22, 16.5], [14, 20]]), 'rgba(10,20,70,.45)');
-  fillStroke(g, mirror([[8.5, -3], [11.5, -.5], [11.5, 7], [8.5, 5]]), '#2fd8ff');
-  // 翼尖机炮与航行灯
+  // 平尾
+  fillStroke(g, mirror([[6, 22], [20, 31], [20.5, 36], [8, 34]]), vgrad(g, 22, 36, '#8fb0ee', '#27418f'), '#dbe7ff', .8);
+  // 主翼
+  fillStroke(g, mirror([[5, -3], [10, 0], [32, 17], [33.5, 25], [25, 24.5], [12, 29], [6, 27]]), vgrad(g, -3, 29, '#f4f8ff', '#5878c8'), '#ffffff', 1);
+  fillStroke(g, mirror([[17, 9.5], [30.5, 19.5], [31, 22.8], [17, 13.6]]), '#ff6a2a');
+  fillStroke(g, mirror([[13, 15], [25, 22], [14, 26.5]]), 'rgba(20,40,110,.4)');
+  g.strokeStyle = 'rgba(255,255,255,.85)'; g.lineWidth = 1; g.beginPath(); g.moveTo(10, 0); g.lineTo(32, 17); g.moveTo(-10, 0); g.lineTo(-32, 17); g.stroke();   // 机翼前缘高光
+  // 翼尖导弹
   for (const sd of [-1, 1]) {
-    g.fillStyle = vgrad(g, 2, 16, '#f2f6ff', '#7f8fb8'); g.fillRect(sd * 27.6 - 1.3, 3, 2.6, 13);
-    g.fillStyle = '#16204a'; g.fillRect(sd * 27.6 - 1.3, 3, 2.6, 2);
-    g.fillStyle = sd < 0 ? '#ff5a5a' : '#5aff9a'; g.beginPath(); g.arc(sd * 29, 20.5, 1.5, 0, TAU); g.fill();
+    g.fillStyle = vgrad(g, 10, 26, '#ffffff', '#9aa6c4'); rrp(g, sd * 33 - 1.5, 11, 3, 15, 1.4); g.fill();
+    g.fillStyle = '#ff3b3b'; g.beginPath(); g.moveTo(sd * 33, 7.5); g.lineTo(sd * 33 + 1.5, 11.5); g.lineTo(sd * 33 - 1.5, 11.5); g.closePath(); g.fill();
   }
+  // 鸭翼与进气道
+  fillStroke(g, mirror([[4, -15], [14, -8.5], [13, -5], [5, -8]]), vgrad(g, -15, -5, '#e8f0ff', '#6f8fd8'), '#ffffff', .8);
+  fillStroke(g, mirror([[4.6, -10], [9.5, -5], [10.5, 8], [6.4, 10]]), '#131b44');
   // 机身
-  fillStroke(g, mirror([[0, -35], [2.4, -28], [5.2, -15], [6.8, 0], [6.2, 14], [4, 25], [0, 23]]), vgrad(g, -35, 25, '#ffffff', '#86a8ea'), '#e6efff', 1);
-  fillStroke(g, mirror([[0, -35], [1.9, -29.5], [0, -26]]), '#ff5a4a');
-  fillStroke(g, mirror([[0, 3], [2.2, 7], [2.2, 19], [0, 22]]), 'rgba(40,70,170,.45)');
-  fillStroke(g, mirror([[4.6, -7], [8.2, -4], [8.2, 2], [5.4, 1]]), '#0f1840');
-  g.strokeStyle = 'rgba(60,90,180,.5)'; g.lineWidth = .7; g.beginPath(); g.moveTo(-5.6, -12); g.lineTo(5.6, -12); g.moveTo(-6.6, 8); g.lineTo(6.6, 8); g.stroke();
-  // 座舱
-  g.beginPath(); g.ellipse(0, -11, 3.7, 8.6, 0, 0, TAU);
-  const cg = g.createLinearGradient(0, -20, 0, -2); cg.addColorStop(0, '#eaffff'); cg.addColorStop(.45, '#39a2ff'); cg.addColorStop(1, '#0a2a8c');
-  g.fillStyle = cg; g.fill(); g.strokeStyle = '#0b1d5c'; g.lineWidth = 1; g.stroke();
-  g.fillStyle = 'rgba(255,255,255,.85)'; g.beginPath(); g.ellipse(-1.2, -13.5, 1, 3, 0, 0, TAU); g.fill();
+  fillStroke(g, mirror([[0, -41], [1.9, -35], [4, -25], [5.6, -11], [6.7, 4], [6.7, 20], [5, 31], [0, 29]]), vgrad(g, -41, 31, '#ffffff', '#93b0ea'), '#f2f6ff', 1);
+  fillStroke(g, mirror([[0, -41], [1.9, -35], [2.5, -31], [0, -30]]), '#59658a');
+  fillStroke(g, mirror([[0, 2], [2.4, 6], [2.4, 24], [0, 28]]), 'rgba(40,70,170,.5)');
+  g.strokeStyle = 'rgba(60,90,180,.5)'; g.lineWidth = .7; g.beginPath(); g.moveTo(-5, -22); g.lineTo(5, -22); g.moveTo(-6.6, 12); g.lineTo(6.6, 12); g.stroke();
+  // 双垂尾
+  for (const sd of [-1, 1]) fillStroke(g, [[sd * 4.6, 13], [sd * 8.6, 15], [sd * 11.5, 31], [sd * 8, 31]], vgrad(g, 13, 31, '#5f86ee', '#152a78'), '#cfe0ff', .8);
+  g.fillStyle = '#ff6a2a'; g.fillRect(-10.6, 27, 2.6, 2.4); g.fillRect(8, 27, 2.6, 2.4);
+  // 座舱（琥珀色舱盖）
+  g.beginPath(); g.ellipse(0, -17, 3.7, 9.2, 0, 0, TAU);
+  const cg = g.createLinearGradient(0, -27, 0, -8); cg.addColorStop(0, '#fff8d0'); cg.addColorStop(.45, '#ffb43a'); cg.addColorStop(1, '#6a3a06');
+  g.fillStyle = cg; g.fill(); g.strokeStyle = '#3a2204'; g.lineWidth = 1; g.stroke();
+  g.fillStyle = 'rgba(255,255,255,.9)'; g.beginPath(); g.ellipse(-1.2, -20, 1, 3.2, 0, 0, TAU); g.fill();
 });
+function cv(w, h) { const c = document.createElement('canvas'); c.width = w; c.height = h; return c; }
+function rollFrames(spr) {   // 预渲染 5 帧左右翻滚：机身变窄，下沉一侧变暗、抬起一侧变亮
+  return [-2, -1, 0, 1, 2].map(k => {
+    const c = cv(spr.c.width, spr.c.height), g = c.getContext('2d'), hw = c.width / 2, hh = c.height / 2;
+    g.translate(hw, hh); g.scale(1 - Math.abs(k) * .13, 1); g.drawImage(spr.c, -hw, -hh);
+    if (k) {
+      g.globalCompositeOperation = 'source-atop';
+      const lg = g.createLinearGradient(-hw, 0, hw, 0), a = Math.abs(k) * .16;
+      lg.addColorStop(k > 0 ? 0 : 1, 'rgba(255,255,255,' + a + ')'); lg.addColorStop(.5, 'rgba(0,0,0,0)'); lg.addColorStop(k > 0 ? 1 : 0, 'rgba(0,0,24,' + a * 1.7 + ')');
+      g.fillStyle = lg; g.fillRect(-hw, -hh, c.width, c.height);
+    }
+    return { c, w: spr.w, h: spr.h };
+  });
+}
+const playerFrames = rollFrames(sprPlayer);
+function shadowOf(spr) {   // 精灵的纯黑剪影，用来画投在地面上的影子
+  if (!spr.sh) { const c = cv(spr.c.width, spr.c.height), g = c.getContext('2d'); g.drawImage(spr.c, 0, 0); g.globalCompositeOperation = 'source-in'; g.fillStyle = '#000'; g.fillRect(0, 0, c.width, c.height); spr.sh = { c, w: spr.w, h: spr.h }; }
+  return spr.sh;
+}
 const sprFlame = mk(12, 34, g => {
   const gr = g.createLinearGradient(0, -17, 0, 17);
   gr.addColorStop(0, 'rgba(255,255,255,.95)'); gr.addColorStop(.25, 'rgba(120,220,255,.85)'); gr.addColorStop(.6, 'rgba(60,120,255,.35)'); gr.addColorStop(1, 'rgba(40,80,255,0)');
@@ -789,6 +812,73 @@ const BOSSES = [
   { name: '蜂巢母舰', rgb: '200,240,90', hp: 1.2 },
   { name: '裂空者', rgb: '110,220,255', hp: 1.05 }
 ];
+const sprPad = mk(42, 42, g => {   // 炮位底座
+  const o = []; for (let i = 0; i < 6; i++) { const a = i * Math.PI / 3; o.push([Math.cos(a) * 17, Math.sin(a) * 17]); }
+  fillStroke(g, o, vgrad(g, -17, 17, '#8f98ad', '#3a4254'), '#cfd8ea', 1);
+  g.strokeStyle = '#ffcf40'; g.lineWidth = 2; g.setLineDash([4, 4]); g.beginPath(); g.arc(0, 0, 12, 0, TAU); g.stroke(); g.setLineDash([]);
+});
+const sprTank = mk(40, 48, g => {
+  g.fillStyle = '#1c2016'; rrp(g, -17, -20, 9, 40, 3); g.fill(); rrp(g, 8, -20, 9, 40, 3); g.fill();
+  g.strokeStyle = '#4a5238'; g.lineWidth = 1; for (let y = -17; y < 20; y += 5) { g.beginPath(); g.moveTo(-17, y); g.lineTo(-8, y); g.moveTo(8, y); g.lineTo(17, y); g.stroke(); }
+  fillStroke(g, [[-11, -18], [11, -18], [13, 16], [-13, 16]], vgrad(g, -18, 16, '#a8c070', '#4a5a2a'), '#d6e8a8', 1);
+  g.fillStyle = 'rgba(30,40,10,.4)'; g.fillRect(-8, 6, 16, 7);
+});
+const sprBoat = mk(36, 62, g => {   // 海上场景里代替坦克的炮艇
+  g.fillStyle = 'rgba(255,255,255,.4)'; g.beginPath(); g.moveTo(0, -30); g.lineTo(17, 28); g.lineTo(-17, 28); g.closePath(); g.fill();
+  fillStroke(g, mirror([[0, -28], [8, -14], [10, 16], [7, 27], [0, 28]]), vgrad(g, -28, 28, '#c8d2e0', '#4a5870'), '#eef4ff', 1);
+  g.fillStyle = '#2a3446'; g.fillRect(-5, 8, 10, 12);
+});
+const sprGT = {
+  19: mk(30, 42, g => { g.fillStyle = vgrad(g, -19, -3, '#e8eefc', '#6a7892'); g.fillRect(-2.2, -19, 4.4, 17); g.fillStyle = '#20283a'; g.fillRect(-2.2, -19, 4.4, 2.5);
+    g.beginPath(); g.arc(0, 0, 8.5, 0, TAU); g.fillStyle = vgrad(g, -8, 8, '#ffe0a0', '#a06a1c'); g.fill(); g.strokeStyle = '#fff2d0'; g.lineWidth = 1; g.stroke(); g.beginPath(); g.arc(0, 1, 3, 0, TAU); g.fillStyle = '#3a2408'; g.fill(); }),
+  20: mk(30, 50, g => { g.fillStyle = vgrad(g, -24, -4, '#e0ecc0', '#5a6a3a'); g.fillRect(-2.6, -24, 5.2, 21); g.fillStyle = '#1c2410'; g.fillRect(-3.4, -24, 6.8, 3.5);
+    fillStroke(g, [[-8, -7], [8, -7], [10, 6], [0, 10], [-10, 6]], vgrad(g, -7, 10, '#c0d888', '#566a2c'), '#e6f4c0', 1); g.beginPath(); g.arc(0, 1, 3, 0, TAU); g.fillStyle = '#26300e'; g.fill(); }),
+  21: mk(32, 40, g => { fillStroke(g, [[-11, -10], [11, -10], [11, 12], [-11, 12]], vgrad(g, -10, 12, '#b0b8c8', '#4a5262'), '#e0e6f2', 1);
+    for (const x of [-5.5, 5.5]) { g.fillStyle = '#f4f6fa'; g.fillRect(x - 2.6, -15, 5.2, 24); g.fillStyle = '#ff3b3b'; g.beginPath(); g.moveTo(x, -19.5); g.lineTo(x + 2.6, -15); g.lineTo(x - 2.6, -15); g.closePath(); g.fill(); } }),
+  22: mk(32, 46, g => { for (const x of [-4, 4]) { g.fillStyle = vgrad(g, -21, -3, '#f2f4f8', '#6a7284'); g.fillRect(x - 1.8, -21, 3.6, 19); g.fillStyle = '#20283a'; g.fillRect(x - 2.4, -21, 4.8, 3); }
+    fillStroke(g, [[-10, -5], [10, -5], [8, 9], [-8, 9]], vgrad(g, -5, 9, '#fff0b0', '#9a7a1c'), '#fff8d8', 1); g.fillStyle = '#3a2c08'; g.fillRect(-4, 0, 8, 5); })
+};
+const sprFortT = mk(64, 86, g => {   // 陆行堡垒的主炮塔
+  for (const x of [-9, 9]) { g.fillStyle = vgrad(g, -40, -8, '#f0f2f6', '#5a6274'); g.fillRect(x - 3.6, -40, 7.2, 34); g.fillStyle = '#161c2a'; g.fillRect(x - 4.6, -40, 9.2, 5); }
+  fillStroke(g, [[-20, -12], [20, -12], [26, 12], [14, 26], [-14, 26], [-26, 12]], vgrad(g, -12, 26, '#ffd9a0', '#8a5a1c'), '#fff0d0', 1.2);
+  g.beginPath(); g.arc(0, 8, 8, 0, TAU); g.fillStyle = vgrad(g, 0, 16, '#fff', '#ff8a2a'); g.fill();
+});
+const sprSeg = mk(46, 46, g => {     // 炎龙的身体节
+  for (let i = 0; i < 6; i++) { g.save(); g.rotate(i * Math.PI / 3); fillStroke(g, [[-3.5, -13], [0, -21], [3.5, -13]], '#ffb347', '#5a1a04', .8); g.restore(); }
+  g.beginPath(); g.arc(0, 0, 15, 0, TAU); g.fillStyle = vgrad(g, -15, 15, '#ff8a4a', '#6a1404'); g.fill(); g.strokeStyle = '#ffd0a0'; g.lineWidth = 1.2; g.stroke();
+  g.beginPath(); g.arc(0, 0, 7, 0, TAU); g.fillStyle = vgrad(g, -7, 7, '#fff2c0', '#ff5a1a'); g.fill();
+});
+sprBoss.push(
+  mk(176, 136, g => {                                // 4 陆行堡垒：履带 + 装甲车体
+    for (const sd of [-1, 1]) { g.fillStyle = '#15171f'; rrp(g, sd * 66 - 15, -56, 30, 112, 8); g.fill(); g.strokeStyle = '#4a5066'; g.lineWidth = 1.5; for (let y = -50; y < 54; y += 9) { g.beginPath(); g.moveTo(sd * 66 - 15, y); g.lineTo(sd * 66 + 15, y); g.stroke(); } }
+    fillStroke(g, mirror([[0, -58], [40, -52], [58, -30], [58, 36], [40, 56], [0, 60]]), vgrad(g, -58, 60, '#d9b070', '#5a3a14'), '#ffe2b0', 1.5);
+    fillStroke(g, mirror([[0, -44], [30, -40], [44, -24], [44, 28], [30, 44], [0, 46]]), 'rgba(50,28,6,.45)');
+    for (const [x, y] of [[-40, -34], [40, -34], [-40, 34], [40, 34]]) { g.beginPath(); g.arc(x, y, 8, 0, TAU); g.fillStyle = '#2a1c08'; g.fill(); g.beginPath(); g.arc(x, y, 4, 0, TAU); g.fillStyle = '#ff9a3a'; g.fill(); }
+    g.strokeStyle = 'rgba(255,230,180,.4)'; g.lineWidth = 1; g.beginPath(); g.moveTo(-58, 0); g.lineTo(58, 0); g.stroke();
+  }),
+  mk(170, 136, g => {                                // 5 极寒守卫：冰晶
+    for (const [a, l, w] of [[-1.25, 70, 13], [1.25, 70, 13], [-.62, 60, 11], [.62, 60, 11], [-2.2, 52, 10], [2.2, 52, 10]]) {
+      g.save(); g.rotate(a); fillStroke(g, [[0, -l], [w, -l * .35], [w * .6, 0], [-w * .6, 0], [-w, -l * .35]], vgrad(g, -l, 0, '#ffffff', '#3a8ad8'), '#e8fbff', 1.2);
+      g.strokeStyle = 'rgba(255,255,255,.6)'; g.lineWidth = 1; g.beginPath(); g.moveTo(0, -l); g.lineTo(0, 0); g.stroke(); g.restore();
+    }
+    fillStroke(g, mirror([[0, -50], [16, -30], [26, 0], [18, 34], [0, 58]]), vgrad(g, -50, 58, '#f4fdff', '#2f6ac0'), '#ffffff', 1.5);
+    fillStroke(g, mirror([[0, -30], [9, -14], [13, 4], [8, 26], [0, 38]]), 'rgba(10,50,120,.45)');
+    g.beginPath(); g.arc(0, 0, 11, 0, TAU); g.fillStyle = vgrad(g, -11, 11, '#ffffff', '#35c8ff'); g.fill(); g.strokeStyle = '#063a7a'; g.lineWidth = 1.2; g.stroke();
+  }),
+  mk(100, 110, g => {                                // 6 熔岩炎龙：龙头
+    fillStroke(g, [[-20, -30], [-40, -52], [-27, -22]], '#ffb347', '#5a1a04', 1); fillStroke(g, [[20, -30], [40, -52], [27, -22]], '#ffb347', '#5a1a04', 1);
+    fillStroke(g, mirror([[0, -36], [22, -30], [34, -8], [28, 20], [14, 42], [0, 50]]), vgrad(g, -36, 50, '#ff9a5a', '#6a1404'), '#ffd0a0', 1.5);
+    fillStroke(g, mirror([[0, -20], [10, -14], [14, 4], [8, 26], [0, 34]]), 'rgba(60,8,0,.45)');
+    for (const sd of [-1, 1]) { fillStroke(g, [[sd * 8, -6], [sd * 22, -12], [sd * 20, 0]], '#fff2a0', '#3a0a00', 1); g.fillStyle = '#1a0400'; g.beginPath(); g.ellipse(sd * 16, -6, 1.6, 3.4, sd * .5, 0, TAU); g.fill(); }
+    fillStroke(g, [[-9, 34], [0, 52], [9, 34]], '#ffe27a', '#5a1a04', 1);
+    g.strokeStyle = 'rgba(255,230,170,.5)'; g.lineWidth = 1; g.beginPath(); g.moveTo(0, -30); g.lineTo(0, 30); g.stroke();
+  })
+);
+BOSSES.push(
+  { name: '陆行堡垒', rgb: '255,190,90', hp: 1.3, ground: true },
+  { name: '极寒守卫', rgb: '150,220,255', hp: 1.05 },
+  { name: '熔岩炎龙', rgb: '255,120,50', hp: 1.5 }
+);
 const sprMine = mk(24, 24, g => {                     // 水雷
   g.strokeStyle = '#a9862a'; g.lineWidth = 1.6;
   for (let i = 0; i < 8; i++) { const a = i * Math.PI / 4; g.beginPath(); g.moveTo(Math.cos(a) * 7, Math.sin(a) * 7); g.lineTo(Math.cos(a) * 10.5, Math.sin(a) * 10.5); g.stroke(); }
@@ -1035,7 +1125,7 @@ function updateBg(dt) {
     for (const s of arr) { s.y += d; if (s.y > H + 4) { s.y -= H + 8; s.x = rand(0, W); } }
   });
   for (const f of flares) { f.y += 14 * bgMul * dt; if (f.y > H + 20) { f.y = -20; f.x = rand(0, W); } }
-  const th = state === 'menu' ? 0 : Math.floor(Math.max(0, wave - 1) / 5) % ZONES.length;
+  const th = state === 'menu' ? 0 : Math.floor(Math.max(0, wave - 1) / (5 * STAGES.length)) % ZONES.length;   // 太空轨道关：每轮换一种星空
   if (th !== bgTheme) { bgPrev = bgTheme; bgTheme = th; bgFade = 0; propCd = 1.5; }
   bgFade = Math.min(1, bgFade + dt / 3);
   for (const r of rocks) { r.y += r.spd * bgMul * dt; r.rot += r.vr * dt; if (r.y > H + 40) { r.y = -40; r.x = rand(0, W); r.s = rand(.4, 1.1); r.spr = pick(rockSprs); } }
@@ -1108,6 +1198,226 @@ function drawBg(t) {
 /* =====================================================================
  *  游戏数据
  * ===================================================================== */
+/* =====================================================================
+ *  伪 3D 地面：带透视的滚动地表 + 立体地物 + 云层 / 天气 + 空中单位的投影
+ * ===================================================================== */
+// 关卡：每 5 波一个场景，各有专属 Boss；最后一个是太空轨道（沿用星空背景）
+const STAGES = [
+  { name: '雪原冰川', ground: 'snow',   boss: 5, haze: '205,228,255', weather: 'snow',  cloud: '255,255,255' },
+  { name: '黄沙戈壁', ground: 'desert', boss: 4, haze: '255,226,170', weather: 'dust',  cloud: '255,240,210' },
+  { name: '碧海群岛', ground: 'ocean',  boss: 0, haze: '175,222,255', weather: 'none',  cloud: '255,255,255' },
+  { name: '翡翠丛林', ground: 'jungle', boss: 2, haze: '195,240,205', weather: 'none',  cloud: '240,255,245' },
+  { name: '熔岩火山', ground: 'lava',   boss: 6, haze: '255,120,60',  weather: 'ash',   cloud: '60,45,45' },
+  { name: '霓虹都市', ground: 'city',   boss: 3, haze: '70,90,190',   weather: 'rain',  cloud: '40,48,80' },
+  { name: '深空轨道', ground: null,     boss: 1 }
+];
+const stageOf = n => Math.floor(Math.max(0, n - 1) / 5) % STAGES.length;
+const GSPD = 70, TS = .75, TWP = 540, THP = 768;   // 地面滚动速度（世界单位/秒）、贴图比例、贴图像素尺寸
+const persp = y => .5 + .5 * y / H;                 // 屏幕第 y 行的透视缩放：顶部（远处）0.5，底部（近处）1
+const distAt = y => 2 * H * Math.log(1 / Math.max(.2, persp(y)));   // 屏幕第 y 行对应的前方距离
+const yAtDist = d => H * (2 * Math.exp(-d / (2 * H)) - 1);          // 反过来：前方距离 d 落在屏幕哪一行
+let gScroll = 0, scene = -1, sceneTarget = -1, wipeT = 0, gtexKey = '', gtex = null, gobjs = [], nextDecor = 0, weather = [], clouds = [];
+const gproj = (wx, wy) => { const y = yAtDist(wy - gScroll), sc = persp(y); return [W / 2 + (wx - W / 2) * sc, y, sc]; };   // 地面坐标 -> 屏幕坐标和缩放
+const onGround = () => scene >= 0 && !!STAGES[scene].ground;
+
+function noiseTile(w, h, rgb, o0, sq) {   // 上下可无缝循环的分形噪声
+  const c = cv(w, h), g = c.getContext('2d'); g.imageSmoothingEnabled = true; g.imageSmoothingQuality = 'high';
+  let amp = .52;
+  for (let o = 0; o < 4; o++) {
+    const tw = o0 << o, th = Math.max(2, Math.round(tw * h / w)), t = cv(tw, th + 1), tg = t.getContext('2d'), id = tg.createImageData(tw, th + 1);
+    for (let i = 0; i < tw * (th + 1); i++) {
+      const src = i >= tw * th ? i - tw * th : -1;   // 最后一行复制第一行，放大后首尾衔接
+      id.data[i * 4] = id.data[i * 4 + 1] = id.data[i * 4 + 2] = 255; id.data[i * 4 + 3] = src >= 0 ? id.data[src * 4 + 3] : Math.random() * 255 * amp | 0;
+    }
+    tg.putImageData(id, 0, 0);
+    g.globalCompositeOperation = o ? 'lighter' : 'source-over'; g.drawImage(t, 0, .5, tw, th, 0, 0, w, h); amp *= .55;
+  }
+  if (sq) { g.globalCompositeOperation = 'destination-in'; g.drawImage(c, 0, 0); }
+  g.globalCompositeOperation = 'source-in'; g.fillStyle = 'rgb(' + rgb + ')'; g.fillRect(0, 0, w, h);
+  return c;
+}
+function makeGround(key) {   // 程序生成各场景的地表贴图（上下循环）
+  const c = cv(TWP, THP * 2), g = c.getContext('2d'), R = rand;
+  const wrap = fn => { for (const dy of [-THP, 0, THP]) { g.save(); g.translate(0, dy); fn(); g.restore(); } };
+  const base = col => { g.fillStyle = col; g.fillRect(0, 0, TWP, THP); };
+  const nz = (rgb, a, o0, sq) => { g.globalAlpha = a; g.drawImage(noiseTile(TWP, THP, rgb, o0, sq), 0, 0); g.globalAlpha = 1; };
+  const blob = (x, y, rx, ry, col) => wrap(() => { g.beginPath(); g.ellipse(x, y, rx, ry, 0, 0, TAU); g.fillStyle = col; g.fill(); });
+  const rock = (x, y, r, c1, c2) => wrap(() => {
+    const o = []; for (let k = 0; k < 7; k++) { const a = k / 7 * TAU, q = r * (.7 + ((k * 5) % 4) * .1); o.push([x + Math.cos(a) * q, y + Math.sin(a) * q * .8]); }
+    g.fillStyle = 'rgba(0,0,0,.25)'; poly(g, o.map(q => [q[0] + r * .3, q[1] + r * .3])); g.fill();
+    poly(g, o); g.fillStyle = c1; g.fill(); poly(g, o.map(q => [x + (q[0] - x) * .6 - r * .12, y + (q[1] - y) * .6 - r * .14])); g.fillStyle = c2; g.fill();
+  });
+  const riverX = (y, ph, amp) => TWP / 2 + Math.sin(y / THP * TAU + ph) * amp + Math.sin(y / THP * TAU * 3 + ph * 2) * amp * .3;
+  const river = (col, w, ph, amp) => {
+    g.strokeStyle = col; g.lineWidth = w; g.lineCap = 'round'; g.lineJoin = 'round'; g.beginPath();
+    for (let y = -24; y <= THP + 24; y += 12) { const x = riverX(y, ph, amp); if (y === -24) g.moveTo(x, y); else g.lineTo(x, y); }
+    g.stroke();
+  };
+  g.save(); g.beginPath(); g.rect(0, 0, TWP, THP); g.clip();
+  if (key === 'snow') {
+    base('#e6f1ff'); nz('140,178,228', .6, 3); nz('255,255,255', .55, 4, true);
+    for (let i = 0; i < 5; i++) {   // 冰湖
+      const x = R(40, TWP - 40), y = R(0, THP), rx = R(30, 70), ry = R(18, 40);
+      blob(x, y, rx + 5, ry + 5, 'rgba(255,255,255,.85)'); blob(x, y, rx, ry, 'rgba(140,205,235,.9)');
+      wrap(() => { g.strokeStyle = 'rgba(255,255,255,.75)'; g.lineWidth = 1; g.beginPath(); g.moveTo(x - rx * .6, y); g.lineTo(x + rx * .2, y - ry * .3); g.lineTo(x + rx * .6, y + ry * .2); g.stroke(); });
+    }
+    for (let i = 0; i < 26; i++) rock(R(0, TWP), R(0, THP), R(6, 15), '#6f7c90', '#f4f9ff');
+    for (let i = 0; i < 110; i++) { const x = R(0, TWP), y = R(6, THP - 6); g.fillStyle = 'rgba(60,90,130,.3)'; g.beginPath(); g.ellipse(x + 3, y + 2, 4, 2, 0, 0, TAU); g.fill(); g.fillStyle = '#2f5a48'; g.beginPath(); g.moveTo(x, y - 6); g.lineTo(x + 3.4, y + 1); g.lineTo(x - 3.4, y + 1); g.closePath(); g.fill(); g.fillStyle = '#fff'; g.beginPath(); g.moveTo(x, y - 6); g.lineTo(x + 1.4, y - 3); g.lineTo(x - 1.4, y - 3); g.closePath(); g.fill(); }
+  } else if (key === 'desert') {
+    base('#e0bb74'); nz('165,112,52', .55, 3); nz('255,236,186', .45, 4, true);
+    for (let i = 0; i < 20; i++) { const x = R(0, TWP), y = R(0, THP), h = R(14, 30), e = R(-6, 6);   // 沙丘脊线
+      wrap(() => { g.lineCap = 'round'; g.strokeStyle = 'rgba(135,90,40,.35)'; g.lineWidth = 6; g.beginPath(); g.moveTo(x - 55, y); g.quadraticCurveTo(x, y - h, x + 55, y + e); g.stroke();
+        g.strokeStyle = 'rgba(255,244,205,.5)'; g.lineWidth = 2; g.beginPath(); g.moveTo(x - 55, y - 4); g.quadraticCurveTo(x, y - h - 4, x + 55, y + e - 4); g.stroke(); }); }
+    for (let i = 0; i < 16; i++) rock(R(0, TWP), R(0, THP), R(6, 16), '#8a5a34', '#c99a62');
+    { const x = R(120, TWP - 120), y = R(100, THP - 100); blob(x, y, 40, 26, '#5a9a4a'); blob(x, y, 30, 18, '#3f9ad0'); }   // 绿洲
+  } else if (key === 'ocean') {
+    base('#12589c'); nz('6,36,96', .6, 3); nz('70,170,225', .4, 4, true);
+    for (let i = 0; i < 300; i++) { g.fillStyle = 'rgba(255,255,255,.22)'; g.fillRect(R(0, TWP), R(0, THP), R(4, 12), 1.2); }
+    for (let i = 0; i < 4; i++) { const x = R(50, TWP - 50), y = R(0, THP), rx = R(34, 62), ry = R(22, 40);   // 岛屿
+      blob(x, y, rx + 18, ry + 16, 'rgba(80,205,215,.5)'); blob(x, y, rx, ry, '#ead7a0'); blob(x + 2, y - 1, rx * .68, ry * .66, '#3f9a4a'); blob(x - 4, y - 4, rx * .4, ry * .36, '#58b85a'); }
+  } else if (key === 'jungle') {
+    base('#2c7438'); nz('12,52,22', .6, 3); nz('125,205,95', .4, 5, true);
+    for (let i = 0; i < 3; i++) blob(R(60, TWP - 60), R(0, THP), R(28, 46), R(18, 30), '#8a6a3a');
+    river('rgba(196,178,120,.9)', 32, 1, 150); river('#2f86c8', 23, 1, 150); river('rgba(140,210,240,.5)', 6, 1, 150);
+    const greens = ['#1f5a2a', '#2f7a3a', '#3f9446', '#55a850', '#256a34'];
+    for (let i = 0; i < 520; i++) { const x = R(0, TWP), y = R(10, THP - 10), r = R(6, 13); if (Math.abs(x - riverX(y, 1, 150)) < 28) continue;
+      g.fillStyle = 'rgba(0,30,10,.35)'; g.beginPath(); g.arc(x + 2.5, y + 3.5, r, 0, TAU); g.fill(); g.fillStyle = pick(greens); g.beginPath(); g.arc(x, y, r, 0, TAU); g.fill();
+      g.fillStyle = 'rgba(190,255,170,.16)'; g.beginPath(); g.arc(x - r * .3, y - r * .3, r * .45, 0, TAU); g.fill(); }
+  } else if (key === 'lava') {
+    base('#261a19'); nz('8,5,7', .65, 3); nz('95,62,52', .4, 4, true);
+    for (let i = 0; i < 22; i++) rock(R(0, TWP), R(0, THP), R(8, 20), '#3a2a28', '#5a433c');
+    for (const [ph, amp] of [[.5, 170], [3.3, 110]]) { river('rgba(255,90,20,.3)', 36, ph, amp); river('#ff7a1a', 16, ph, amp); river('#ffd86a', 5, ph, amp); }
+    for (let i = 0; i < 70; i++) { const x = R(0, TWP), y = R(0, THP), a = R(0, TAU), l = R(8, 22); g.strokeStyle = 'rgba(255,120,30,.6)'; g.lineWidth = 1.4; g.beginPath(); g.moveTo(x, y); g.lineTo(x + Math.cos(a) * l, y + Math.sin(a) * l); g.stroke(); }
+  } else {   // city：夜间街区
+    base('#0d1020');
+    for (let by = 0; by < 8; by++) for (let bx = 0; bx < 6; bx++) {
+      const x = bx * 90 + 11, y = by * 96 + 11, park = Math.random() < .1;
+      g.fillStyle = park ? '#153a2a' : pick(['#171c2e', '#1b2136', '#141827', '#1d2440']); g.fillRect(x, y, 68, 74);
+      g.strokeStyle = 'rgba(120,140,200,.28)'; g.lineWidth = 1; g.strokeRect(x, y, 68, 74);
+      if (!park) for (let k = 0; k < 16; k++) { g.fillStyle = pick(['#ffd97a', '#7fe6ff', '#ff7ad6', '#ffffff', '#ffd97a']); g.globalAlpha = R(.5, .95); g.fillRect(x + 5 + randi(0, 9) * 6, y + 6 + randi(0, 10) * 6, 3, 2); }
+      g.globalAlpha = 1;
+    }
+    g.fillStyle = 'rgba(255,215,120,.55)';
+    for (let bx = 0; bx <= 6; bx++) for (let y = 0; y < THP; y += 16) g.fillRect(bx * 90 + 4.5, y, 1.2, 8);
+    for (let by = 0; by <= 8; by++) for (let x = 0; x < TWP; x += 16) g.fillRect(x, by * 96 + 4.5, 8, 1.2);
+    for (let i = 0; i < 40; i++) { g.fillStyle = pick(['rgba(255,80,80,.9)', 'rgba(255,255,255,.9)']); g.fillRect(randi(0, 6) * 90 + R(2, 7), R(0, THP), 1.6, 3); }   // 车灯
+  }
+  const dim = { snow: .46, desert: .4, ocean: .2, jungle: .22 }[key];
+  if (dim) { g.fillStyle = 'rgba(8,18,60,' + dim + ')'; g.fillRect(0, 0, TWP, THP); }
+  g.restore();
+  g.drawImage(c, 0, 0, TWP, THP, 0, THP, TWP, THP);
+  return c;
+}
+// ---- 立体地物（底部贴地绘制，随透视缩放）----
+const DECOR = {
+  snow: [mk(40, 62, g => { g.fillStyle = '#5a3a22'; g.fillRect(-2, 20, 4, 9);
+      for (const [y, w] of [[18, 17], [6, 14], [-6, 11], [-17, 7]]) { fillStroke(g, [[0, y - 20], [w, y], [-w, y]], vgrad(g, y - 20, y, '#3f8a5a', '#17402a'), '#0e2a1c', .8); fillStroke(g, [[0, y - 20], [w * .45, y - 11], [-w * .2, y - 9], [-w * .5, y - 10]], '#f4fbff'); } }),
+    mk(44, 34, g => { fillStroke(g, [[-18, 12], [-12, -6], [-2, -13], [8, -8], [18, 2], [16, 13]], vgrad(g, -13, 13, '#d9f2ff', '#6f9ac8'), '#f4fbff', 1); fillStroke(g, [[-12, -6], [-2, -13], [8, -8], [2, -3], [-6, -1]], '#ffffff'); })],
+  desert: [mk(30, 48, g => { g.strokeStyle = '#0e3a1c'; g.lineWidth = 9; g.lineCap = 'round'; g.beginPath(); g.moveTo(0, 20); g.lineTo(0, -16); g.moveTo(0, 4); g.lineTo(-9, 4); g.lineTo(-9, -6); g.moveTo(0, -2); g.lineTo(9, -2); g.lineTo(9, -11); g.stroke();
+      g.strokeStyle = '#3f9a4a'; g.lineWidth = 6.4; g.stroke(); g.strokeStyle = 'rgba(190,255,170,.35)'; g.lineWidth = 1.5; g.beginPath(); g.moveTo(-1.5, 18); g.lineTo(-1.5, -15); g.stroke(); }),
+    mk(64, 46, g => { fillStroke(g, [[-28, 20], [-22, -8], [-8, -16], [14, -15], [26, -4], [29, 20]], vgrad(g, -16, 20, '#e0a868', '#7a4420'), '#f6d6a6', 1); fillStroke(g, [[-22, -8], [-8, -16], [14, -15], [26, -4], [8, -6], [-10, -5]], '#f2c88a');
+      g.strokeStyle = 'rgba(90,50,20,.4)'; g.lineWidth = 1; g.beginPath(); g.moveTo(-10, -5); g.lineTo(-12, 18); g.moveTo(8, -6); g.lineTo(10, 18); g.stroke(); })],
+  ocean: [mk(44, 30, g => { g.fillStyle = 'rgba(255,255,255,.55)'; g.beginPath(); g.ellipse(0, 9, 20, 5, 0, 0, TAU); g.fill(); fillStroke(g, [[-16, 9], [-10, -6], [0, -11], [10, -5], [16, 9]], vgrad(g, -11, 9, '#8f9aa8', '#3a4452'), '#c8d2e0', 1); })],
+  jungle: [mk(56, 60, g => { g.fillStyle = '#4a2f18'; g.fillRect(-3, 12, 6, 16);
+      for (const [x, y, r] of [[0, 2, 17], [-13, 6, 12], [13, 6, 12], [-6, -9, 13], [8, -8, 12], [0, -16, 10]]) { g.beginPath(); g.arc(x + 1.5, y + 2, r, 0, TAU); g.fillStyle = '#0f3a1a'; g.fill(); g.beginPath(); g.arc(x, y, r, 0, TAU); g.fillStyle = vgrad(g, y - r, y + r, '#7fd060', '#1f6a2c'); g.fill(); } }),
+    mk(46, 58, g => { g.strokeStyle = '#6a4a22'; g.lineWidth = 4; g.lineCap = 'round'; g.beginPath(); g.moveTo(2, 27); g.quadraticCurveTo(-3, 6, 0, -10); g.stroke();
+      g.strokeStyle = '#2f8a3a'; g.lineWidth = 4; for (let i = 0; i < 7; i++) { const a = i / 7 * TAU; g.beginPath(); g.moveTo(0, -10); g.quadraticCurveTo(Math.cos(a) * 12, -16 + Math.sin(a) * 6, Math.cos(a) * 20, -8 + Math.sin(a) * 11); g.stroke(); } })],
+  lava: [mk(40, 62, g => { g.drawImage(glow('255,110,30'), -20, 8, 40, 26); fillStroke(g, [[-13, 28], [-9, 4], [-3, -18], [2, -28], [7, -10], [13, 28]], vgrad(g, -28, 28, '#6a514a', '#1c1312'), '#8a6a60', 1);
+      g.strokeStyle = '#ff8a2a'; g.lineWidth = 1.5; g.beginPath(); g.moveTo(0, 26); g.lineTo(-2, 10); g.lineTo(2, -2); g.stroke(); }),
+    mk(46, 34, g => { fillStroke(g, [[-19, 13], [-13, -5], [-1, -12], [11, -7], [19, 13]], vgrad(g, -12, 13, '#5a433c', '#1a1110'), '#7a5a50', 1); g.drawImage(glow('255,120,40'), -8, -4, 16, 16); })],
+  city: [0, 1, 2].map(i => mk(60, 92, g => {   // 高楼：上方是屋顶，下方是朝向镜头的立面
+    const w = [22, 18, 25][i], top = [-40, -26, -34][i], col = ['#27305a', '#3a2a5a', '#1f3a52'][i], neon = ['#7fe6ff', '#ff7ad6', '#ffd97a'][i];
+    g.fillStyle = vgrad(g, top + 16, 44, col, '#080a16'); g.fillRect(-w, top + 16, w * 2, 44 - top - 16);
+    for (let y = top + 22; y < 40; y += 7) for (let x = -w + 4; x < w - 4; x += 6) if ((x * 7 + y * 3 + i) % 5 > 1) { g.fillStyle = (x + y + i) % 3 ? '#ffd97a' : neon; g.globalAlpha = .85; g.fillRect(x, y, 3, 3.5); }
+    g.globalAlpha = 1;
+    fillStroke(g, [[-w, top + 16], [-w + 5, top], [w - 5, top], [w, top + 16]], vgrad(g, top, top + 16, '#5a6690', '#2a3252'), neon, 1);
+    g.fillStyle = neon; g.fillRect(-1, top - 9, 2, 9); g.drawImage(glow(i === 1 ? '255,122,214' : i ? '255,217,122' : '127,230,255'), -7, top - 16, 14, 14);
+  }))
+};
+const cloudSprs = {};
+function cloudSpr(rgb) {
+  return cloudSprs[rgb] || (cloudSprs[rgb] = mk(190, 110, g => { for (const [x, y, r] of [[-50, 10, 38], [-14, -8, 46], [28, 2, 44], [58, 16, 30], [0, 20, 40]]) g.drawImage(glow(rgb), x - r, y - r * .7, r * 2, r * 1.4); }));
+}
+function enterScene(i) {   // 切换场景：生成地表贴图、铺好地物、初始化云和天气
+  scene = i; gobjs = []; weather = []; clouds = [];
+  if (!onGround()) { gtex = null; gtexKey = ''; return; }
+  const st = STAGES[i];
+  if (gtexKey !== st.ground) { gtex = makeGround(st.ground); gtexKey = st.ground; }
+  nextDecor = gScroll - 40; spawnDecor();
+  for (let k = 0; k < 4; k++) clouds.push({ x: rand(0, W), y: rand(-80, H), s: k === 3 ? 2.6 : rand(1, 1.8), spd: k === 3 ? 260 : rand(110, 150), hi: k === 3 });
+  const n = { snow: 55, rain: 46, ash: 30, dust: 26, none: 0 }[st.weather];
+  for (let k = 0; k < n; k++) weather.push({ x: rand(0, W), y: rand(0, H), s: rand(.6, 1.4), ph: rand(0, TAU) });
+}
+function spawnDecor() {
+  const set = DECOR[STAGES[scene].ground], gapA = { ocean: 220, city: 46, jungle: 60 }[STAGES[scene].ground] || 80;
+  while (nextDecor < gScroll + distAt(0) + 80) {
+    gobjs.push({ wx: rand(-170, W + 170), wy: nextDecor, spr: pick(set), sc: rand(.85, 1.3) });
+    nextDecor += rand(gapA * .5, gapA * 1.5);
+  }
+}
+function updateGround(dt) {
+  // 场景切换：穿过云层的白色过渡，在最亮的一刻换场景（顺便藏住生成贴图的卡顿）
+  const want = state === 'menu' ? -1 : stageOf(wave);
+  if (want !== sceneTarget) { sceneTarget = want; if (scene === -1 || want === -1) { enterScene(want); wipeT = 0; } else wipeT = 1.4; }
+  if (wipeT > 0) { const was = wipeT; wipeT -= dt; if (was > .7 && wipeT <= .7) enterScene(sceneTarget); }
+  if (!onGround()) return;
+  gScroll += GSPD * bgMul * dt;
+  spawnDecor();
+  compact(gobjs, o => o.wy - gScroll < -90);
+  for (const c of clouds) { c.y += c.spd * bgMul * dt; if (c.y > H + 120 * c.s) { c.y = -120 * c.s; c.x = rand(0, W); } }
+  const wt = STAGES[scene].weather;
+  for (const p of weather) {
+    if (wt === 'snow') { p.y += (120 + p.s * 80) * dt * bgMul; p.x += Math.sin(p.ph += dt * 2) * 30 * dt - 14 * dt; }
+    else if (wt === 'rain') { p.y += 760 * dt; p.x -= 150 * dt; }
+    else if (wt === 'ash') { p.y += (50 + p.s * 60) * dt * bgMul; p.x += Math.sin(p.ph += dt * 1.5) * 24 * dt; }
+    else { p.x -= (240 + p.s * 120) * dt; p.y += 90 * dt; }
+    if (p.y > H + 10) { p.y = -10; p.x = rand(0, W + 60); } if (p.x < -20) p.x += W + 40;
+  }
+}
+function drawGround() {   // 逐条画地表：越靠上的条带取越宽、越长的一段贴图，形成向远方延伸的透视
+  const SH = 5;
+  for (let y = 0; y < H; y += SH) {
+    const sc = persp(y + SH / 2), dFar = distAt(y), dNear = distAt(y + SH);
+    let ty = (-(gScroll + dFar) * TS) % THP; if (ty < 0) ty += THP;
+    const sw = W / sc * TS;
+    ctx.drawImage(gtex, (TWP - sw) / 2, ty, sw, (dFar - dNear) * TS, 0, y, W, SH + .7);
+  }
+  for (let i = gobjs.length - 1; i >= 0; i--) {   // 地物：从远到近
+    const o = gobjs[i], pj = gproj(o.wx, o.wy); if (pj[1] < -30 || pj[0] < -60 || pj[0] > W + 60) continue;
+    const k = pj[2] * o.sc;
+    ctx.fillStyle = 'rgba(0,0,10,.24)'; ctx.beginPath(); ctx.ellipse(pj[0] + 7 * k, pj[1] + 1, o.spr.w * .42 * k, o.spr.w * .16 * k, 0, 0, TAU); ctx.fill();
+    put(o.spr, pj[0], pj[1] - o.spr.h * k / 2, k);
+  }
+}
+function drawSky(t) {   // 远处的大气雾、投在地面上的影子、低空云
+  const st = STAGES[scene], hz = ctx.createLinearGradient(0, 0, 0, H * .45);
+  hz.addColorStop(0, 'rgba(' + st.haze + ',.34)'); hz.addColorStop(1, 'rgba(' + st.haze + ',0)');
+  ctx.fillStyle = hz; ctx.fillRect(0, 0, W, H * .45);
+  ctx.globalAlpha = .26;
+  for (const e of enemies) {
+    if (e.ground || e.alpha < .5) continue;
+    const sp = shadowOf(e.type === 4 ? sprBoss[e.bk] : sprEnemy[e.type]), off = e.type === 4 ? 1.7 : 1;
+    ctx.save(); ctx.translate(e.x + 15 * off, e.y + 27 * off); ctx.rotate(e.rot); put(sp, 0, 0, e.sc * .9); ctx.restore();
+  }
+  if (P.mode === 'ship' || P.mode === 'possessed') {
+    const sp = shadowOf(P.mode === 'possessed' ? sprEnemy[P.ghost.type] : sprPlayer);
+    put(sp, P.x + 15, P.y + 27, .9);
+  }
+  const cs = cloudSpr(st.cloud);
+  for (const c of clouds) if (!c.hi) { ctx.globalAlpha = .42; put(cs, c.x, c.y, c.s); }
+  ctx.globalAlpha = 1;
+}
+function drawWeather(t) {   // 最上层：高空云和雪 / 雨 / 火山灰 / 沙尘
+  const st = STAGES[scene], cs = cloudSpr(st.cloud);
+  for (const c of clouds) if (c.hi) { ctx.globalAlpha = .2; put(cs, c.x, c.y, c.s); }
+  ctx.globalAlpha = 1;
+  const wt = st.weather; if (wt === 'none') return;
+  if (wt === 'snow') { ctx.fillStyle = 'rgba(255,255,255,.5)'; for (const p of weather) ctx.fillRect(p.x, p.y, .8 + p.s * .7, .8 + p.s * .7); }   // 雪花画得又小又淡，避免和敌弹混淆
+  else if (wt === 'rain') { ctx.strokeStyle = 'rgba(190,210,255,.38)'; ctx.lineWidth = 1; ctx.beginPath(); for (const p of weather) { ctx.moveTo(p.x, p.y); ctx.lineTo(p.x - 4, p.y + 18 * p.s); } ctx.stroke(); }
+  else if (wt === 'ash') { ctx.globalCompositeOperation = 'lighter'; for (const p of weather) drawGlow('255,140,50', p.x, p.y, 2.5 + p.s * 2, .8); ctx.globalAlpha = 1; ctx.globalCompositeOperation = 'source-over'; }
+  else { ctx.strokeStyle = 'rgba(255,235,190,.32)'; ctx.lineWidth = 1.2; ctx.beginPath(); for (const p of weather) { ctx.moveTo(p.x, p.y); ctx.lineTo(p.x + 22 * p.s, p.y - 7 * p.s); } ctx.stroke(); }
+}
+
 const ET = [  // 敌机类型（sfx：被击毁时的爆炸音效）
   { name: '侦察机', r: 12, hp: 1,   score: 10,   rgb: '255,110,140', sfx: 'pop' },
   { name: '战斗机', r: 15, hp: 2,   score: 25,   rgb: '255,170,70',  sfx: 'boom' },
@@ -1127,7 +1437,12 @@ const ET = [  // 敌机类型（sfx：被击毁时的爆炸音效）
   { name: '蜂群机', r: 8,  hp: 1,   score: 8,    rgb: '255,230,90',  sfx: 'pop' },      // 成群追踪玩家的小型自杀机
   { name: '引力机', r: 21, hp: 8,   score: 90,   rgb: '170,110,255', sfx: 'bigboom' },  // 把玩家拉向自己，并发射缓慢的重力弹
   { name: '浮游炮台', r: 16, hp: 6, score: 55,   rgb: '255,200,120', sfx: 'boom' },     // 旋转着向四个方向开火
-  { name: '陨石',   r: 20, hp: 6,   score: 15,   rgb: '255,180,90',  sfx: 'boom' }      // 可击碎的障碍，碎成两块小陨石
+  { name: '陨石',   r: 20, hp: 6,   score: 15,   rgb: '255,180,90',  sfx: 'boom' },     // 可击碎的障碍，碎成两块小陨石
+  // 地面单位：随地面靠近，可以被击毁，但不会和飞机相撞，也不能夺舍
+  { name: '小炮台', r: 13, hp: 4,   score: 30,   rgb: '255,210,120', sfx: 'boom', ground: true },      // 固定炮台，瞄准射击
+  { name: '坦克',   r: 16, hp: 8,   score: 60,   rgb: '170,220,120', sfx: 'bigboom', ground: true },   // 横向机动，发射重型炮弹（海上是炮艇）
+  { name: '导弹车', r: 15, hp: 5,   score: 55,   rgb: '255,150,90',  sfx: 'boom', ground: true },      // 发射可被击落的追踪导弹
+  { name: '高射炮', r: 15, hp: 6,   score: 60,   rgb: '255,230,140', sfx: 'boom', ground: true }       // 炮弹飞到你所在的位置后炸成一圈破片
 ];
 // 夺舍后继承的敌机技能（射速远高于玩家基础的 0.17s/发）
 const SKILL = [
@@ -1149,7 +1464,7 @@ const SKILL = [
   { name: '蜂刺连射', interval: .065, shots: 1, spread: 0,  dmg: .7,  speed: 760, move: 1.3,  hp: 2, pierce: 0, rgb: '255,235,110', br: 3.5 },
   { name: '引力重弹', interval: .2,  shots: 1, spread: 0,   dmg: 3.5, speed: 520, move: .85,  hp: 8, pierce: 3, rgb: '190,140,255', br: 7, magnet: true },  // 道具吸附范围加倍
   { name: '十字弹幕', interval: .13, shots: 4, spread: .3,  dmg: 1,   speed: 600, move: .95,  hp: 6, pierce: 0, rgb: '255,210,140', br: 4 },
-  null   // 18 陨石无法夺舍
+  null, null, null, null, null   // 18 陨石和 19-22 地面单位无法夺舍
 ];
 
 const PLAYER_RGB = '120,225,255';
@@ -1457,6 +1772,13 @@ function buildWave(n) {
       t += dur * (i === groups - 1 ? 0 : .65);
     }
   }
+  if (STAGES[stageOf(n)].ground && !bossWave) {   // 地面场景：每波额外出现一批地面部队
+    const add = (gk, cnt) => { const t0 = rand(.5, 3); for (let i = 0; i < cnt; i++) q.push({ t: t0, type: gk, x: rand(40, W - 40), gd: i * 80 + rand(0, 40), amp: rand(30, 60), ph: rand(0, TAU) }); };
+    add(19, clamp(2 + Math.floor(n / 5), 2, 4));
+    if (n >= 3) add(20, n >= 12 ? 3 : 2);
+    if (n >= 7 && Math.random() < .6) add(21, n >= 14 ? 2 : 1);
+    if (n >= 9 && Math.random() < .6) add(22, n >= 16 ? 2 : 1);
+  }
   q.sort((a, b) => a.t - b.t);
   return q;
 }
@@ -1470,7 +1792,8 @@ function spawnEnemy(ev) {
   else if (ev.type === 18) hp = Math.ceil((ev.small ? 2 : 6) * D.hp);
   else if (ev.type >= 1 && !isBoss) hp = Math.ceil((hp * 1.25 + Math.max(0, Math.floor((wave - 1) / 3))) * D.hp);
   else if (ev.type === 0 && wave >= D.scout2) hp = 2;
-  const bk = isBoss ? (ev.bk !== undefined ? ev.bk : Math.floor(Math.max(0, wave - 1) / 5) % BOSSES.length) : 0;
+  const bk = isBoss ? (ev.bk !== undefined ? ev.bk : STAGES[stageOf(wave)].boss) : 0;
+  if (def.ground && !onGround()) return;   // 太空里没有地面单位
   if (isBoss) hp = Math.round((370 + 210 * Math.max(0, wave / 5 - 1)) * D.boss * BOSSES[bk].hp);
   if (elite) hp = Math.ceil(hp * 2.2);
   const sc = elite ? 1.22 : ev.small ? .58 : 1;
@@ -1487,6 +1810,9 @@ function spawnEnemy(ev) {
     shield: sh, maxShield: sh, shieldT: 0, dirv: ev.dirv || 1, cd: ev.cd || 1.2, shots: 0, cycles: 0, sw: 0, aim: Math.PI / 2,
     sc, elite, bk, small: !!ev.small, vr: ev.vr || 0, healT: 0, healTarget: null, dashS: 0, pt2: 0, dashY: 0, ox: 0, tp: 2.5, raged: false, sa0: 0
   });
+  { const ne = enemies[enemies.length - 1];
+    ne.ground = !!def.ground || (isBoss && !!BOSSES[bk].ground); ne.trail = []; ne.segs = null;
+    if (def.ground) { ne.ai = 'ground'; ne.wx = ev.x; ne.wy = gScroll + distAt(0) + 30 + (ev.gd || 0); ne.ct = rand(1.2, 2.4); ne.y = -40; } }
   if (ev.type === 13) Sfx.play('snipeCharge');
   if (isBoss) { showBanner('警告！', 'BOSS · ' + BOSSES[bk].name, '#ff6a8a', 2.6); Sfx.play('boss'); }
   else if (elite && !seenElite) { seenElite = true; popup(W / 2, safeTop + 150, '精英敌机 ★：更强，必掉道具', '#ffd75a', 15, 2.2); }
@@ -1541,14 +1867,21 @@ function updateBoss(e, dt) {
     return;
   }
   e.pt += dt;
-  let tx; const ty = BOSS_Y + Math.sin(e.pt * 1.1) * 10;
+  let tx; const ty = e.bk === 6 ? BOSS_Y + 24 + Math.sin(e.pt * 1.25) * (rage ? 95 : 65) : BOSS_Y + Math.sin(e.pt * 1.1) * 10;
   if (e.bk === 1) {   // 织网者：狂暴后会瞬移
     if (rage && (e.tp -= dt) <= 0) { e.tp = 3.6; explode(e.x, e.y, '190,110,255', 14, 200); e.ox = rand(-60, 60); e.x = W / 2 + e.ox; e.alpha = .12; Sfx.play('decloak'); }
     tx = W / 2 + e.ox + Math.sin(e.pt * .5) * 42;
   } else if (e.bk === 2) tx = W / 2 + Math.sin(e.pt * .35) * (W / 2 - 92);
   else if (e.bk === 3) tx = W / 2 + Math.sin(e.pt * .95) * (W / 2 - 72);
+  else if (e.bk === 4) { tx = W / 2 + Math.sin(e.pt * .3) * 70; let d = Math.atan2(P.y - e.y, P.x - e.x) - e.aim; while (d > Math.PI) d -= TAU; while (d < -Math.PI) d += TAU; e.aim += clamp(d, -2 * dt, 2 * dt); }
+  else if (e.bk === 5) tx = W / 2 + Math.sin(e.pt * .6) * (W / 2 - 84);
+  else if (e.bk === 6) tx = W / 2 + Math.sin(e.pt * .8) * 128;
   else tx = W / 2 + Math.sin(e.pt * .55) * (W / 2 - 78);
   const k = Math.min(1, dt * 4); e.x += (tx - e.x) * k; e.y += (ty - e.y) * k; e.vx = 0;
+  if (e.bk === 6) {   // 炎龙：身体各节沿着龙头走过的轨迹跟随
+    const tr = e.trail; if (!tr.length || Math.hypot(tr[0][0] - e.x, tr[0][1] - e.y) > 6) { tr.unshift([e.x, e.y]); if (tr.length > 38) tr.pop(); }
+    e.segs = []; for (let i = 4; i < tr.length; i += 4) e.segs.push(tr[i]);
+  }
   e.bt -= dt * D.bossRate * (rage ? 1.2 : 1);
   if (e.bt <= 0 && P.mode !== 'dead') bossAttack(e, rage);
   if (e.bk === 0 && rage) { e.rt -= dt; if (e.rt <= 0) { e.rt = .6; spawnEB(e.x - 44, e.y + 34, 0, 190 * D.spd, 5, '255,130,90'); spawnEB(e.x + 44, e.y + 34, 0, 190 * D.spd, 5, '255,130,90'); } }
@@ -1584,11 +1917,50 @@ function bossAttack(e, rage) {
       for (let i = 0; i < 14; i++) later.push({ t: i * .085, fn: () => { if (e.dead) return; const a = e.sa0 + i * .4; for (let j = 0; j < arms; j++) spawnEB(e.x, e.y + 10, Math.cos(a + j * TAU / arms) * 118 * k, Math.sin(a + j * TAU / arms) * 118 * k, 4.5, '230,255,120'); Sfx.play('spiral'); } });
       e.bt = 2.4;
     }
+  } else if (e.bk === 4) {     // 陆行堡垒：高射炮齐射 / 追踪导弹 / 扇形扫射
+    if (e.pat === 0) {
+      for (let i = 0; i < (rage ? 5 : 3); i++) later.push({ t: i * .22, fn: () => { if (e.dead) return; const ax = P.x + rand(-50, 50), ay = P.y + rand(-40, 40), d = Math.hypot(ax - e.x, ay - e.y) || 1;
+        spawnEB(e.x, e.y, (ax - e.x) / d * 210, (ay - e.y) / d * 210, 6.5, '255,220,120', { kind: 'mine', shot: true, t: d / 210, beep: true }); Sfx.play('mineDrop'); } });
+      e.bt = 2.3;
+    } else if (e.pat === 1) {
+      for (const sd of (rage ? [-1.5, -1, 1, 1.5] : [-1, 1])) spawnEB(e.x + sd * 40, e.y, sd * 60, 60, 5.5, '255,150,70', { kind: 'emissile', homing: true, shot: true, turn: 1.9, accel: 90, maxSp: 165 * k, life: 4.2, age: 0, trailT: 0 });
+      Sfx.play('emissile'); e.bt = 2.2;
+    } else {
+      const a0 = Math.atan2(P.y - e.y, P.x - e.x);
+      for (let i = 0; i < 16; i++) later.push({ t: i * .08, fn: () => { if (e.dead) return; for (const sg of (rage ? [1, -1] : [1])) { const a = a0 + sg * (-.6 + 1.2 * i / 15); spawnEB(e.x, e.y, Math.cos(a) * 165 * k, Math.sin(a) * 165 * k, 5, rgb); } } });
+      e.bt = 2.3;
+    }
+  } else if (e.bk === 5) {     // 极寒守卫：交错冰锥 / 暴风雪 / 冰环 + 冰矛（狂暴时两侧降下冰墙）
+    if (e.pat === 0) { for (let w = 0; w < 3; w++) later.push({ t: w * .3, fn: () => { if (!e.dead) for (let i = 0; i < 7; i++) aimEB(e.x, e.y + 30, 158 * k, (i - 3 + (w % 2) * .5) * .17, 5, rgb); } }); e.bt = 2; }
+    else if (e.pat === 1) { for (let i = 0; i < (rage ? 24 : 16); i++) later.push({ t: i * .1, fn: () => { if (!e.dead) spawnEB(rand(14, W - 14), 60, rand(-35, 35), 132 * k, 5, '225,246,255'); } }); e.bt = 2.4; }
+    else {
+      ring(18, 94 * k, rand(0, TAU), rgb); for (const o of [-.1, 0, .1]) aimEB(e.x, e.y + 30, 225 * k, o, 5.5, '255,255,255');
+      if (rage) { for (const x of [34, W - 34]) hazards.push({ x, w: 68, t: 0, warn: 1, dur: .9, rgb, fired: false }); Sfx.play('beamCharge'); }
+      e.bt = 2.1;
+    }
+  } else if (e.bk === 6) {     // 熔岩炎龙：火焰吐息 / 全身鳞片齐射 / 喷发 + 落石
+    if (e.pat === 0) { for (let i = 0; i < 12; i++) later.push({ t: i * .09, fn: () => { if (!e.dead) aimEB(e.x, e.y + 24, 192 * k, rand(-.12, .12), 6, '255,140,50'); } }); e.bt = 2; }
+    else if (e.pat === 1) { (e.segs || []).forEach((q, i) => later.push({ t: i * .09, fn: () => { if (e.dead) return; const a = Math.atan2(P.y - q[1], P.x - q[0]); spawnEB(q[0], q[1], Math.cos(a) * 150 * k, Math.sin(a) * 150 * k, 5, '255,200,90'); } })); e.bt = 2; }
+    else { ring(14, 108 * k, rand(0, TAU), rgb); for (let i = 0; i < (rage ? 9 : 6); i++) later.push({ t: .2 + i * .15, fn: () => { if (!e.dead) spawnEB(rand(20, W - 20), 56, 0, 168 * k, 6.5, '255,110,40'); } }); e.bt = 2.3; }
   } else {                     // 裂空者：留缺口的弹墙 / 俯冲 / 霰弹
     const wall = () => { const gx = rand(44, W - 44); for (let x = 12; x < W; x += 24) if (Math.abs(x - gx) > 36) spawnEB(x, 64, 0, 128 * k, 5, rgb); };
     if (e.pat === 0) { wall(); if (rage) later.push({ t: .9, fn: () => { if (!e.dead) wall(); } }); e.bt = rage ? 2.6 : 2.1; }
     else if (e.pat === 1) { e.dashS = 1; e.pt2 = 0; Sfx.play('snipeCharge'); e.bt = 3; }
     else { for (let i = 0; i < 9; i++) aimEB(e.x, e.y + 30, 195 * k, (i - 4) * .13, 5, rgb); later.push({ t: .35, fn: () => { if (!e.dead) for (let i = 0; i < 8; i++) aimEB(e.x, e.y + 30, 170 * k, (i - 3.5) * .13, 5, '200,240,255'); } }); e.bt = 1.9; }
+  }
+}
+function groundFire(e) {   // 地面单位开火
+  const k = diffK(), rgb = ET[e.type].rgb, mx = e.x + Math.cos(e.aim) * e.r * 1.3, my = e.y + Math.sin(e.aim) * e.r * 1.3, fast = e.elite ? .75 : 1;
+  e.flashT = .1;
+  if (e.type === 19) { spawnEB(mx, my, Math.cos(e.aim) * 150 * k, Math.sin(e.aim) * 150 * k, 5, rgb); e.ct = 2.3 * D.ivl * fast; Sfx.play('eshoot'); }
+  else if (e.type === 20) { spawnEB(mx, my, Math.cos(e.aim) * 125 * k, Math.sin(e.aim) * 125 * k, 7.5, rgb); e.ct = 2.7 * D.ivl * fast; Sfx.play('eshoot2'); }
+  else if (e.type === 21) {
+    spawnEB(mx, my, Math.cos(e.aim) * 70, Math.sin(e.aim) * 70, 5.5, '255,150,70', { kind: 'emissile', homing: true, shot: true, turn: 1.9, accel: 90, maxSp: 165 * k, life: 4.2, age: 0, trailT: 0 });
+    e.ct = 4.3 * D.ivl * fast; Sfx.play('emissile');
+  } else {   // 高射炮：炮弹飞到玩家当前位置后爆成破片
+    const d = Math.hypot(P.x - mx, P.y - my) || 1;
+    spawnEB(mx, my, (P.x - mx) / d * 190, (P.y - my) / d * 190, 6.5, '255,220,120', { kind: 'mine', shot: true, t: d / 190, beep: true });
+    e.ct = 3.2 * D.ivl * fast; Sfx.play('mineDrop');
   }
 }
 function updateHazards(dt) {   // 带预警的光束：预警结束后才造成伤害
@@ -1622,7 +1994,7 @@ function spawnPowerup(x, y, kind) {
   powerups.push({ x, y, x0: x, vy: 62, kind, t: 0, dead: false });
 }
 function dropFor(e) {
-  const chance = [.1, .18, .5, .14, 1, .25, .32, .38, .35, .55, .35, .35, .48, .35, .35, .03, .5, .3, .16][e.type] * D.drop * (1 + pk('luck') * .3);
+  const chance = [.1, .18, .5, .14, 1, .25, .32, .38, .35, .55, .35, .35, .48, .35, .35, .03, .5, .3, .16, .3, .42, .4, .4][e.type] * D.drop * (1 + pk('luck') * .3);
   pity++;
   if (Math.random() < chance || pity >= D.pity) { pity = 0; spawnPowerup(e.x, e.y); }
 }
@@ -2012,7 +2384,9 @@ function updateBullets(dt) {
       if (e.dead || e.y < -16 || e.cloaked) continue;
       if (b.kind === 'laser' ? b.hits.includes(e) : b.last === e) continue;
       const rr = e.r + b.r;
-      if (segDist2(e.x, e.y, b.x, b.y, tx, ty) < rr * rr) {
+      let segHit = false;
+      if (e.segs) for (const q of e.segs) if (segDist2(q[0], q[1], b.x, b.y, tx, ty) < (15 + b.r) * (15 + b.r)) { segHit = true; break; }   // 炎龙的身体也能打
+      if (segHit || segDist2(e.x, e.y, b.x, b.y, tx, ty) < rr * rr) {
         if (b.kind === 'blast') { blastAt(b, e); b.dead = true; break; }
         hitEnemy(e, b.dmg, b.x, b.y, b.rgb);
         if (b.kind === 'missile') explode(b.x, b.y, '255,190,90', 6, 110);
@@ -2121,6 +2495,14 @@ function updateEnemies(dt) {
         if (e.age > 12) e.dead = true;
         break;
       }
+      case 'ground': { // 地面单位：位置由地面坐标按透视投影到屏幕，炮塔转向玩家
+        if (e.type === 20) { e.pt += dt; e.wx = e.x0 + Math.sin(e.pt * .6 + e.ph) * (e.amp || 45); e.wy -= 12 * dt; }
+        const pj = gproj(e.wx, e.wy); e.x = pj[0]; e.y = pj[1]; e.sc = pj[2] * 1.15 * (e.elite ? 1.22 : 1); e.r = ET[e.type].r * e.sc;
+        let d = Math.atan2(P.y - e.y, P.x - e.x) - e.aim; while (d > Math.PI) d -= TAU; while (d < -Math.PI) d += TAU; e.aim += clamp(d, -3 * dt, 3 * dt);
+        if (e.y > 24 && e.y < H - 170 && P.mode !== 'dead' && (e.ct -= dt) <= 0) groundFire(e);
+        if (!onGround()) e.dead = true;
+        break;
+      }
       case 'rock':    // 陨石：缓慢翻滚着飘落
         e.x += e.vx * dt; e.y += e.vy * dt; e.rot += e.vr * dt;
         break;
@@ -2163,12 +2545,13 @@ function updateEnemies(dt) {
     if (P.mode === 'ship' || P.mode === 'possessed') {
       const pr = P.mode === 'possessed' ? Math.max(9, ET[P.ghost.type].r * .6) : 8;
       const dx = e.x - P.x, dy = e.y - P.y, rr = e.r * .85 + pr;
-      if (dx * dx + dy * dy < rr * rr && e.y > 0) {
+      if (dx * dx + dy * dy < rr * rr && e.y > 0 && !e.ground) {   // 地面单位在下方，不会相撞
         if (P.inv <= 0) {
           hurtPlayer();
           if (e.type !== 4) { e.hp -= 3; e.hitT = .1; if (e.hp <= 0) killEnemy(e); }
         }
       }
+      if (e.segs && P.inv <= 0) for (const q of e.segs) if (Math.hypot(q[0] - P.x, q[1] - P.y) < 14 + pr) { hurtPlayer(); break; }   // 炎龙的身体
     }
   }
 }
@@ -2292,14 +2675,14 @@ function updateWave(dt) {
     const nw = wave + 1;
     later.push({ t: .5, fn: () => {
       if (state !== 'playing') return;
-      if (nw % 5 === 1) { const z = Math.floor((nw - 1) / 5); showBanner('第 ' + (z + 1) + ' 星区', ZONES[z % ZONES.length].name, '#9deaff', 2.6); Sfx.play('zone'); }
+      if (nw % 5 === 1) { const z = Math.floor((nw - 1) / 5); showBanner('第 ' + (z + 1) + ' 关', STAGES[z % STAGES.length].name, '#9deaff', 2.6); Sfx.play('zone'); }
       else if (nw % 5 !== 0) showBanner('第 ' + nw + ' 波', '', '#ffd24a', 1.8);
     } });
   }
 }
 
 function update(dt) {
-  updateBg(dt);
+  updateBg(dt); updateGround(dt);
   bgMulT = (state === 'playing' && P.speedT > 0) ? 2.4 : 1;
   if (state !== 'playing' && state !== 'over') return;
   if (resumeT > 0) { resumeT -= dt; return; }
@@ -2387,8 +2770,30 @@ function drawEnemyExtras(e, t) {   // 新敌机的特效：瞄准线 / 激光预
     ctx.restore();
   }
 }
-function drawEnemies(t) {
+function drawGroundUnit(e, t) {   // 地面单位：底座 + 朝向玩家转动的炮塔
+  const k = e.sc, boss = e.type === 4;
+  ctx.fillStyle = 'rgba(0,0,10,.28)'; ctx.beginPath(); ctx.ellipse(e.x + 5 * k, e.y + 4 * k, e.r * (boss ? 1.9 : 1.15), e.r * (boss ? 1.4 : .85), 0, 0, TAU); ctx.fill();
+  if (e.elite || e.raged) { ctx.globalCompositeOperation = 'lighter'; drawGlow(e.raged ? '255,60,60' : '255,215,90', e.x, e.y, e.r * 2.3, .5 + Math.sin(t * 6) * .15); ctx.globalAlpha = 1; ctx.globalCompositeOperation = 'source-over'; }
+  const base = boss ? sprBoss[e.bk] : e.type === 20 ? (STAGES[scene] && STAGES[scene].ground === 'ocean' ? sprBoat : sprTank) : sprPad, tur = boss ? sprFortT : sprGT[e.type];
+  put(base, e.x, e.y, k);
+  ctx.save(); ctx.translate(e.x, e.y); ctx.rotate(e.aim + Math.PI / 2); put(tur, 0, 0, k);
+  if (e.hitT > 0) { ctx.globalCompositeOperation = 'lighter'; ctx.globalAlpha = .75; put(tur, 0, 0, k); }
+  ctx.restore();
+  if (e.hitT > 0) { ctx.globalCompositeOperation = 'lighter'; ctx.globalAlpha = .6; put(base, e.x, e.y, k); ctx.globalAlpha = 1; ctx.globalCompositeOperation = 'source-over'; }
+  if (e.flashT > 0) { ctx.globalCompositeOperation = 'lighter'; ctx.globalAlpha = clamp(e.flashT / .1, 0, 1); put(sprFlash, e.x + Math.cos(e.aim) * e.r * (boss ? 1 : 1.4), e.y + Math.sin(e.aim) * e.r * (boss ? 1 : 1.4), boss ? 1.2 : .8 * k); ctx.globalAlpha = 1; ctx.globalCompositeOperation = 'source-over'; }
+  drawEnemyExtras(e, t);
+  if (e.lockT > 0) { const lr = e.r + 8; ctx.strokeStyle = 'rgba(110,255,160,.9)'; ctx.lineWidth = 1.8; for (let i = 0; i < 4; i++) { const a0 = t * 3 + i * Math.PI / 2; ctx.beginPath(); ctx.arc(e.x, e.y, lr, a0, a0 + .8); ctx.stroke(); } }
+  if (!boss && e.maxHp >= 5 && e.hp < e.maxHp) { const w = 26, x = e.x - w / 2, y = e.y - e.r - 9; ctx.fillStyle = 'rgba(0,0,0,.5)'; ctx.fillRect(x, y, w, 3); ctx.fillStyle = '#ff6a8a'; ctx.fillRect(x, y, w * e.hp / e.maxHp, 3); }
+}
+function drawEnemies(t, gp) {   // gp=true 只画地面层，false 只画空中层
   for (const e of enemies) {
+    if (!!e.ground !== !!gp) continue;
+    if (e.ground) { drawGroundUnit(e, t); continue; }
+    if (e.segs) for (let i = e.segs.length - 1; i >= 0; i--) {   // 炎龙身体：从尾到头
+      const q = e.segs[i], sc = .95 - i * .045;
+      ctx.globalCompositeOperation = 'lighter'; drawGlow('255,110,40', q[0], q[1], 26 * sc, .4); ctx.globalAlpha = 1; ctx.globalCompositeOperation = 'source-over';
+      ctx.save(); ctx.translate(q[0], q[1]); ctx.rotate(t * 1.5 + i); put(sprSeg, 0, 0, sc); if (e.hitT > 0) { ctx.globalCompositeOperation = 'lighter'; ctx.globalAlpha = .6; put(sprSeg, 0, 0, sc); } ctx.restore();
+    }
     const spr = e.type === 4 ? sprBoss[e.bk] : sprEnemy[e.type];
     // 尾焰
     ctx.globalCompositeOperation = 'lighter';
@@ -2424,7 +2829,7 @@ function drawEnemies(t) {
     }
   }
   // 灵魂模式：高亮最近的可夺舍目标
-  if (P.mode === 'soul') {
+  if (!gp && P.mode === 'soul') {
     let best = null, bd = 150;
     for (const e of enemies) { if (!SKILL[e.type] || e.y < 0) continue; const d = Math.hypot(e.x - P.x, e.y - P.y); if (d < bd) { bd = d; best = e; } }
     if (best) {
@@ -2494,7 +2899,7 @@ function drawPlayer(t) {
   ctx.globalCompositeOperation = 'lighter';
   // 引擎火焰
   const f = (.85 + Math.random() * .4) * (P.speedT > 0 ? 1.7 : 1) * (1 + clamp(-P.vy / 400, -.3, .5));
-  const eng = possessed ? [0] : [-8.5, 8.5], ey = possessed ? y + lift * .85 : y + 24;
+  const eng = possessed ? [0] : [-7, 7], ey = possessed ? y + lift * .85 : y + 34;
   for (const ex of eng) {
     ctx.globalAlpha = blink ? .4 : 1;
     ctx.drawImage(sprFlame.c, x + ex - 6, ey - 4, 12, 34 * f);
@@ -2503,10 +2908,10 @@ function drawPlayer(t) {
   if (possessed) drawGlow(sk.rgb, x, y, lift * 2.1, .35 + Math.sin(t * 7) * .1);
   ctx.globalAlpha = 1; ctx.globalCompositeOperation = 'source-over';
 
-  ctx.save(); ctx.translate(x, y); ctx.rotate(P.tilt * .16);
+  ctx.save(); ctx.translate(x, y); ctx.rotate(P.tilt * (possessed ? .16 : .07));
   ctx.globalAlpha = blink ? .35 : 1;
-  ctx.scale(1 - Math.abs(P.tilt) * .06, 1);
-  put(spr, 0, 0, 1);
+  if (possessed) { ctx.scale(1 - Math.abs(P.tilt) * .06, 1); put(spr, 0, 0, 1); }
+  else put(playerFrames[clamp(Math.round(P.tilt * 2.6), -2, 2) + 2], 0, 0, 1);   // 转向时机身翻滚
   if (possessed) {   // 灵体光晕叠加
     ctx.globalCompositeOperation = 'lighter'; ctx.globalAlpha = .28 + Math.sin(t * 8) * .12; put(spr, 0, 0, 1.0);
   }
@@ -2515,7 +2920,7 @@ function drawPlayer(t) {
 
   if (!possessed) {   // 翼尖光：颜色随当前弹种变化
     ctx.globalCompositeOperation = 'lighter'; const wr = WT[P.wt].rgb, wa = blink ? .25 : .75;
-    drawGlow(wr, x - 28, y + 9, 7, wa); drawGlow(wr, x + 28, y + 9, 7, wa);
+    drawGlow(wr, x - 32 * (1 - Math.abs(P.tilt) * .2), y + 12, 7, wa); drawGlow(wr, x + 32 * (1 - Math.abs(P.tilt) * .2), y + 12, 7, wa);
     ctx.globalAlpha = 1; ctx.globalCompositeOperation = 'source-over';
   }
   if (possessed) {   // 环绕灵魂 + 生命点
@@ -2609,6 +3014,7 @@ function drawChips(x, y) {   // 弹种标签：每种弹各自的等级，当前
 }
 function drawHUD(t) {
   const x0 = 14, y0 = safeTop + 12;
+  if (onGround()) { const hb = ctx.createLinearGradient(0, 0, 0, safeTop + 120); hb.addColorStop(0, 'rgba(0,4,20,.55)'); hb.addColorStop(1, 'rgba(0,4,20,0)'); ctx.fillStyle = hb; ctx.fillRect(0, 0, W, safeTop + 120); }   // 地面场景：顶部压暗，保证文字可读
   ctx.textBaseline = 'top'; ctx.textAlign = 'left';
   ctx.font = '700 10px ' + FONT; ctx.fillStyle = 'rgba(170,200,255,.75)'; ctx.fillText('SCORE', x0, y0);
   ctx.font = '800 24px ' + FONT; ctx.fillStyle = '#fff'; ctx.fillText(String(score).padStart(6, '0'), x0, y0 + 10);
@@ -2668,6 +3074,7 @@ function drawHUD(t) {
 
 let vigGrad = null, vigKey = '';
 function drawOverlays(t) {
+  if (wipeT > 0) { ctx.fillStyle = 'rgba(235,242,255,' + Math.sin((1 - wipeT / 1.4) * Math.PI) + ')'; ctx.fillRect(0, 0, W, H); }   // 换场景：穿云过渡
   // 灵魂 / 夺舍：冷色调与暗角
   if (P.mode === 'soul' || P.mode === 'possessed') {
     const soul = P.mode === 'soul';
@@ -2705,9 +3112,12 @@ function draw(t) {
   ctx.fillStyle = '#04050f'; ctx.fillRect(0, 0, canvas.width, canvas.height);
   const k = dpr * scale, sx = shake > 0 ? rand(-shake, shake) : 0, sy = shake > 0 ? rand(-shake, shake) : 0;
   ctx.setTransform(k, 0, 0, k, sx * k, sy * k);
-  drawBg(t);
+  const gnd = onGround() && gtex;
+  if (gnd) drawGround(); else drawBg(t);
   if (state === 'menu') return;
-  drawPowerups(t); drawEnemies(t); drawHazards(t); drawBullets(t); drawPlayer(t); drawFx();
+  drawEnemies(t, true); if (gnd) drawSky(t);
+  drawPowerups(t); drawEnemies(t, false); drawHazards(t); drawBullets(t); drawPlayer(t); drawFx();
+  if (gnd) drawWeather(t);
   ctx.setTransform(k, 0, 0, k, 0, 0);
   drawOverlays(t);
   drawHUD(t);
@@ -2759,7 +3169,7 @@ function resetWorld() {
     podX: [W / 2, W / 2], podY: [H - 190, H - 190], podCd: [0, .5], extra: 0, shield: 0, speedT: 0, inv: 1.5,
     fireCd: 0, energy: 25, od: 0, ghost: null, soulE: 100, muz: 0, muzList: SHOTS[1], muzSpr: null, trailT: 0, wispT: 0 });
   input.aLock = false; input.aIgnore = false;
-  showBanner('第 1 星区', ZONES[0].name, '#9deaff', 2.2);
+  showBanner('第 1 关', STAGES[0].name, '#9deaff', 2.2);
 }
 function startGame() {
   Sfx.init(); Sfx.play('click');
@@ -2886,7 +3296,7 @@ if (/[?&]debug/.test(location.search)) {
     setScore: v => { score = v; }, setWave: v => { wave = v; waveState = 'pause'; waveT = .1; }, killEnemy, useSkill,
     Sfx, SKILL, ET, get hurtFlash() { return hurtFlash; }, get shake() { return shake; },
     setDiff, get diff() { return diffKey; },
-    hazards, PERKS, offerPerks, pickPerk, get perks() { return perks; }, get combo() { return combo; }, get grazes() { return grazes; }, BOSSES, ZONES,
+    hazards, PERKS, offerPerks, pickPerk, get perks() { return perks; }, get combo() { return combo; }, get grazes() { return grazes; }, BOSSES, ZONES, STAGES, get scene() { return scene; }, gproj,
     noWaves: v => { debugNoWaves = v; }, clearEnemies: () => { enemies.forEach(e => e.dead = true); queue.length = 0; }
   };
 }
