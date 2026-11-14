@@ -307,8 +307,9 @@ const Sfx = (() => {
       const AC = window.AudioContext || window.webkitAudioContext;
       if (!AC) return;
       ac = new AC();
-      master = ac.createGain(); master.gain.value = 1.5;
-      const comp = ac.createDynamicsCompressor(); master.connect(comp); comp.connect(ac.destination);   // 提高整体音量，用压缩器防止爆音
+      master = ac.createGain(); master.gain.value = 1.3;
+      const lp = ac.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 2400; lp.Q.value = .5;   // 总输出再过一道低通，整体更圆润
+      const comp = ac.createDynamicsCompressor(); master.connect(lp); lp.connect(comp); comp.connect(ac.destination);   // 提高整体音量，用压缩器防止爆音
       noiseBuf = ac.createBuffer(1, ac.sampleRate, ac.sampleRate);
       const d = noiseBuf.getChannelData(0);
       for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
@@ -317,11 +318,15 @@ const Sfx = (() => {
   function tone(f0, f1, dur, type, vol, delay) {
     const t = ac.currentTime + (delay || 0);
     const o = ac.createOscillator(), g = ac.createGain();
-    o.type = type;
+    // 柔和音色：方波 / 锯齿波一律换成三角波，并把高频压到约 1000Hz 以内（越高压得越多），起音也放缓
+    o.type = type === 'sine' ? 'sine' : 'triangle';
+    const soft = f => f <= 440 ? f : 440 + (f - 440) * .3;
+    f0 = soft(f0); f1 = soft(f1);
+    if (type === 'square' || type === 'sawtooth') vol *= 1.5;   // 三角波比原来的波形轻，补一点音量
     o.frequency.setValueAtTime(f0, t);
     o.frequency.exponentialRampToValueAtTime(Math.max(20, f1), t + dur);
     g.gain.setValueAtTime(0.0001, t);
-    g.gain.exponentialRampToValueAtTime(vol, t + 0.01);
+    g.gain.exponentialRampToValueAtTime(vol, t + Math.min(0.025, dur * .4));
     g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
     o.connect(g); g.connect(master); o.start(t); o.stop(t + dur + 0.03);
   }
@@ -329,6 +334,7 @@ const Sfx = (() => {
     const t = ac.currentTime + (delay || 0);
     const s = ac.createBufferSource(); s.buffer = noiseBuf;
     const f = ac.createBiquadFilter(); f.type = 'lowpass';
+    f0 = Math.min(f0, 1800); f1 = Math.min(f1, 1800);   // 噪声也去掉刺耳的高频
     f.frequency.setValueAtTime(f0, t);
     f.frequency.exponentialRampToValueAtTime(Math.max(40, f1), t + dur);
     const g = ac.createGain();
@@ -1173,7 +1179,7 @@ let hazards = [];   // Boss 光束等带预警的危险区
 const PERKS = [
   { id: 'dmg',    name: '穿甲弹芯', desc: '所有伤害 +15%',            max: 4, rgb: '255,120,90' },
   { id: 'rate',   name: '速射机构', desc: '射速 +12%',                max: 4, rgb: '255,215,80' },
-  { id: 'energy', name: '聚能核心', desc: '星爆充能速度 +40%',        max: 3, rgb: '110,220,255' },
+  { id: 'energy', name: '聚气加速', desc: 'B 键技能聚气速度 +50%',    max: 4, rgb: '110,220,255' },
   { id: 'speed',  name: '矢量引擎', desc: '移动速度 +8%',             max: 3, rgb: '140,255,200' },
   { id: 'luck',   name: '幸运星',   desc: '道具掉落 +30%',            max: 3, rgb: '255,180,230' },
   { id: 'magnet', name: '磁力场',   desc: '道具吸附范围 +80%',        max: 2, rgb: '190,150,255' },
@@ -1465,7 +1471,7 @@ function spawnEnemy(ev) {
   else if (ev.type >= 1 && !isBoss) hp = Math.ceil((hp * 1.25 + Math.max(0, Math.floor((wave - 1) / 3))) * D.hp);
   else if (ev.type === 0 && wave >= D.scout2) hp = 2;
   const bk = isBoss ? (ev.bk !== undefined ? ev.bk : Math.floor(Math.max(0, wave - 1) / 5) % BOSSES.length) : 0;
-  if (isBoss) hp = Math.round((280 + 160 * Math.max(0, wave / 5 - 1)) * D.boss * BOSSES[bk].hp);
+  if (isBoss) hp = Math.round((370 + 210 * Math.max(0, wave / 5 - 1)) * D.boss * BOSSES[bk].hp);
   if (elite) hp = Math.ceil(hp * 2.2);
   const sc = elite ? 1.22 : ev.small ? .58 : 1;
   // 狙击机(5)、布雷机(6)、激光舰(9) 等由各自的 AI 负责攻击，不走通用射击
@@ -1768,7 +1774,7 @@ function updatePlayer(dt) {
 
   P.inv = Math.max(0, P.inv - dt); P.shield = Math.max(0, P.shield - dt);
   P.speedT = Math.max(0, P.speedT - dt); P.od = Math.max(0, P.od - dt); P.muz = Math.max(0, P.muz - dt);
-  if (P.mode !== 'soul') P.energy = Math.min(100, P.energy + dt * 3.4 * (1 + pk('energy') * .4));
+  if (P.mode !== 'soul') P.energy = Math.min(100, P.energy + dt * 3.4 * (1 + pk('energy') * .5));
 
   // 魂能不会随时间减少：只在夺舍的飞机被击毁时消耗（见 ghostDie），击毁敌机可回复
   // 速度提升：尾迹
@@ -1927,7 +1933,7 @@ function killEnemy(e) {
   const gain = Math.round(def.score * (e.elite ? 3 : 1) * comboMul());
   score += gain; popup(e.x, e.y - 8, '+' + gain, e.type === 4 || e.elite ? '#ffd24a' : '#ffe28a', e.type === 4 ? 20 : e.elite ? 16 : 13);
   kills++;
-  if (P.mode !== 'soul') P.energy = Math.min(100, P.energy + (e.type === 4 ? 0 : 4 * (1 + pk('energy') * .4)));
+  if (P.mode !== 'soul') P.energy = Math.min(100, P.energy + (e.type === 4 ? 0 : 4 * (1 + pk('energy') * .5)));
   if (P.mode === 'possessed') P.soulE = Math.min(100, P.soulE + (e.type === 4 ? 25 : 6));
   if (e.type === 4) {
     for (let i = 0; i < 9; i++) later.push({ t: i * .11, fn: () => { explode(e.x + rand(-50, 50), e.y + rand(-34, 34), pick(['255,120,160', '255,200,100', '255,255,255']), 22, 300); addShake(10); Sfx.play('bigboom'); } });
@@ -2207,7 +2213,7 @@ function updateEBullets(dt) {
       if (dx * dx + dy * dy < 1) { if (P.shield > 0 || P.inv <= 0) { b.dead = true; hurtPlayer(); } }
       else if (!b.gz && b.kind !== 'mine') {   // 擦弹：子弹贴身掠过，奖励少量得分和星爆能量
         const gx = (b.x - P.x) / (ax + b.r + 15), gy = (b.y - P.y) / (ay + b.r + 15);
-        if (gx * gx + gy * gy < 1) { b.gz = true; grazes++; score += 3; P.energy = Math.min(100, P.energy + 1.5 * (1 + pk('energy') * .4)); spark(b.x, b.y, '255,255,255', 2); Sfx.play('graze'); }
+        if (gx * gx + gy * gy < 1) { b.gz = true; grazes++; score += 3; P.energy = Math.min(100, P.energy + 1.5 * (1 + pk('energy') * .5)); spark(b.x, b.y, '255,255,255', 2); Sfx.play('graze'); }
       }
     }
   }
@@ -2763,6 +2769,8 @@ function offerPerks() {   // 击败 Boss 后：从未满级的强化里随机给
   if (state !== 'playing' || P.mode === 'dead') return;
   const pool = PERKS.filter(q => pk(q.id) < q.max);
   perkChoices = [];
+  const ei = pool.findIndex(q => q.id === 'energy');   // 「聚气加速」未满级时每次必定出现在选项里
+  if (ei >= 0) perkChoices.push(pool.splice(ei, 1)[0]);
   while (perkChoices.length < 3 && pool.length) perkChoices.push(pool.splice(randi(0, pool.length - 1), 1)[0]);
   const box = $('perkList'); box.innerHTML = '';
   perkChoices.forEach((q, i) => {
