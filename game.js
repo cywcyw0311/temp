@@ -429,22 +429,28 @@ const SKILL = [
 ];
 
 const PLAYER_RGB = '120,225,255';
-const SHOTS = {  // [枪口偏移 x, 偏转角度(度)]
+// 四种弹各有特点，升级方式也各不相同（数值是全部命中时的每秒伤害）：
+//   标准弹：正前方的主炮 + 向两侧张开的扇形散射。覆盖面最宽，贴近目标时全部命中火力最高，
+//           远距离打单个目标只有正前方几发命中。主炮 8 / 15 / 15 / 23 / 23，全中 8 / 15 / 31 / 38 / 53
+//   激光弹：一道越来越粗的主光束，高等级再加两道副光束；穿透一条直线上的所有敌机。6 / 11 / 16 / 21 / 26
+//   锁定弹：向两侧甩出去再拐弯追踪的飞镖，每级多一发；不用瞄准，单发火力低。4 / 8 / 12 / 14 / 19
+//   爆破弹：成编队飞行的大火球，每级多一发、越来越大；范围爆炸并清除敌弹，射速慢。7 / 12 / 16 / 20 / 24
+const SHOTS = {  // 标准弹：[枪口偏移 x, 偏转角度(度)]
   1: [[0, 0]],
   2: [[-7, 0], [7, 0]],
-  3: [[0, 0], [-9, -2], [9, 2]],
-  4: [[-4, -.7], [4, .7], [-12, -2.2], [12, 2.2]],
-  5: [[0, 0], [-7, -1.3], [7, 1.3], [-14, -2.1], [14, 2.1]]   // 几乎平行的一排，略微散开：每升一级火力都实打实地增加
+  3: [[-6, 0], [6, 0], [-11, -10], [11, 10]],
+  4: [[0, 0], [-9, 0], [9, 0], [-13, -12], [13, 12]],
+  5: [[0, 0], [-9, 0], [9, 0], [-12, -9], [12, 9], [-15, -18], [15, 18]]
 };
 // 各弹种 1~5 级参数
-// 每升一级都多一发（多一束），一眼就能看出变化。单体火力（每秒伤害，全部命中时）大致为：
-//   标准弹 6 / 13 / 19 / 26 / 32（火力最高，但要自己对准）
-//   激光弹 6 / 11 / 15 / 21 / 26（一条直线上的敌机全部穿透）
-//   锁定弹 4 / 8 / 12 / 15 / 19（自动追踪，不用瞄准）
-//   爆破弹 7 / 12 / 16 / 21 / 26（另有范围伤害，并清除爆炸范围内的敌弹）
-const LASER = { beams: [[0], [-5, 5], [-9, 0, 9], [-13, -4.5, 4.5, 13], [-17, -8.5, 0, 8.5, 17]], dmg: [.45, .38, .36, .36, .37], r: [3, 3, 3.2, 3.4, 3.6], iv: .07 };   // 穿透全部敌机
-const LOCKW = { n: [1, 2, 3, 4, 5], dmg: [1.3, 1.2, 1.15, 1.12, 1.12], turn: [8, 8.5, 9, 9.5, 10], iv: .3 };                                                              // 自动锁定不同目标
-const BLAST = { shells: [1, 2, 3, 4, 5], radius: [44, 48, 52, 56, 60], dmg: [3, 2.5, 2.3, 2.2, 2.15], iv: .42 };                                   // 命中后范围爆炸
+const LASER = { beams: [   // 每道光束：[偏移 x, 粗细, 伤害]
+  [[0, 3, .45]],
+  [[0, 5.5, .77]],
+  [[0, 5.5, .6], [-13, 2.6, .25], [13, 2.6, .25]],
+  [[0, 7, .8], [-15, 3.4, .33], [15, 3.4, .33]],
+  [[0, 9, 1], [-18, 4.5, .42], [18, 4.5, .42]]], iv: .07 };                                                                                  // 穿透全部敌机
+const LOCKW = { n: [1, 2, 3, 4, 5], dmg: [1.3, 1.2, 1.15, 1.12, 1.12], turn: [8, 8.5, 9, 9.5, 10], iv: .3 };                                  // 自动锁定不同目标
+const BLAST = { shells: [1, 2, 3, 4, 5], radius: [44, 48, 52, 56, 60], dmg: [3, 2.4, 2.15, 2, 1.95], size: [6.5, 7, 7.5, 8, 8.5], iv: .42 };   // 命中后范围爆炸
 const POD = { iv: [1.1, .85, .62], dmg: [2, 2, 3] };                                                                                      // 导弹吊舱 1~3 级
 const BASE_SPEED = 290, LOCK_MS = 480, MAX_LIVES = 5;
 
@@ -1383,14 +1389,14 @@ function playerFire() {
       setFireCd(.17 / boost);
       for (const s of pat) {
         const a = s[1] * Math.PI / 180;
-        bullets.push({ x: P.x + s[0], y: P.y - 26, vx: Math.sin(a) * 640, vy: -Math.cos(a) * 640, r: 4, dmg: 1.1, pierce: 0, rgb: PLAYER_RGB, dead: false, last: null, a });
+        bullets.push({ x: P.x + s[0], y: P.y - 26, vx: Math.sin(a) * 640, vy: -Math.cos(a) * 640, r: 4, dmg: 1.3, pierce: 0, rgb: PLAYER_RGB, dead: false, last: null, a });
         list.push([s[0], 0]);
       }
       P.muzRgb = '255,225,140'; Sfx.play('shoot');
     } else if (t === 'laser') {
       setFireCd(LASER.iv / boost);
-      for (const dx of LASER.beams[li]) {
-        bullets.push({ kind: 'laser', x: P.x + dx, y: P.y - 28, vx: 0, vy: -1500, r: LASER.r[li], len: 70, dmg: LASER.dmg[li], pierce: 0, hits: [], rgb: '255,110,255', dead: false, last: null, a: 0 });
+      for (const [dx, br, bd] of LASER.beams[li]) {
+        bullets.push({ kind: 'laser', x: P.x + dx, y: P.y - 28, vx: 0, vy: -1500, r: br, len: 70, dmg: bd, pierce: 0, hits: [], rgb: '255,110,255', dead: false, last: null, a: 0 });
         list.push([dx, 0]);
       }
       P.muzRgb = '255,140,255'; Sfx.play('laser');
@@ -1398,7 +1404,7 @@ function playerFire() {
       setFireCd(LOCKW.iv / boost);
       const n = LOCKW.n[li], tg = pickTargets(n);
       for (let i = 0; i < n; i++) {
-        const c = i - (n - 1) / 2, a = c * (n > 3 ? .24 : .3), dx = c * 7;
+        const c = i - (n - 1) / 2, a = c * .42, dx = c * 7;   // 向两侧甩出去，再拐弯追踪
         bullets.push({ kind: 'lock', x: P.x + dx, y: P.y - 24, vx: Math.sin(a) * 470, vy: -Math.cos(a) * 470, r: 4, dmg: LOCKW.dmg[li], pierce: 0, rgb: '110,255,160', dead: false, last: null, a,
           homing: true, target: tg.length ? tg[i % tg.length] : null, turn: LOCKW.turn[li], life: 2.2, age: 0 });
         list.push([dx, 0]);
@@ -1408,8 +1414,8 @@ function playerFire() {
       setFireCd(BLAST.iv / boost);
       const n = BLAST.shells[li];
       for (let i = 0; i < n; i++) {
-        const c = i - (n - 1) / 2, a = c * .025, dx = c * 10;
-        bullets.push({ kind: 'blast', x: P.x + dx, y: P.y - 26, vx: Math.sin(a) * 520, vy: -Math.cos(a) * 520, r: 7, br: BLAST.radius[li], bd: BLAST.dmg[li], dmg: BLAST.dmg[li], pierce: 0, rgb: '255,160,70', dead: false, last: null, a });
+        const c = i - (n - 1) / 2, a = c * .02, dx = c * 12;   // 箭头编队：外侧的火球靠后
+        bullets.push({ kind: 'blast', x: P.x + dx, y: P.y - 26 + Math.abs(c) * 18, vx: Math.sin(a) * 520, vy: -Math.cos(a) * 520, r: BLAST.size[li], br: BLAST.radius[li], bd: BLAST.dmg[li], dmg: BLAST.dmg[li], pierce: 0, rgb: '255,160,70', dead: false, last: null, a });
         list.push([dx, 0]);
       }
       P.muzRgb = '255,180,90'; Sfx.play('blast');
