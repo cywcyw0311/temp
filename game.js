@@ -365,12 +365,12 @@ const STAGES = [   // 20 关：场景各不相同，每关一个 Boss
   { name: '虚空裂隙', ground: null, sp: 'void',  boss: 17 },
   { name: '霸主旗舰', ground: 'flagship', boss: 19 }
 ];
-const WPS = 3, NSTAGE = STAGES.length;   // 每关 3 波：2 波敌人 + 1 波 Boss
+const WPS = 5, NSTAGE = STAGES.length;   // 每关 5 波：4 波敌人 + 1 波 Boss
 const stageOf = n => Math.min(NSTAGE - 1, Math.floor(Math.max(0, n - 1) / WPS));
 const isBossWave = n => n > 0 && n % WPS === 0;
 // 难度等级：由关卡进度换算（从 1 逐步升到 26），敌机登场、血量、弹速都按它计算
-function levelOf(n) { const st = stageOf(n), j = (Math.max(1, n) - 1) % WPS; return isBossWave(n) ? Math.round(2 + st * 1.25) : 1 + Math.floor((st * 2 + j) * 25 / 39); }
-let DL = 1;
+function levelOf(n) { const st = stageOf(n), j = (Math.max(1, n) - 1) % WPS; return isBossWave(n) ? Math.round(1 + st * 1.3) : 1 + Math.floor((st * (WPS - 1) + j) * 25 / (NSTAGE * (WPS - 1) - 1)); }
+let DL = 1, introSeen = {};   // introSeen：本局已经安排过首次登场的难度等级
 
 const ET = [  // 敌机类型（sfx：被击毁时的爆炸音效）
   { name: '侦察机', r: 12, hp: 1,   score: 10,   rgb: '255,110,140', sfx: 'pop' },
@@ -722,8 +722,9 @@ function buildWave(n) {
   let t = .4;
   if (bossWave) {
     q.push({ t: 1, type: 4, x: W / 2, y: -90, ai: 'boss' });
-    pat.stream(7, 0); pat.stream(18, 1);
-    if (n >= 10) pat.dive(12);
+    if (sIdx >= 1) pat.stream(9, 0);   // 第 1 关的 Boss 没有护航
+    if (sIdx >= 2) pat.stream(19, 1);
+    if (n >= 10) pat.dive(13);
   } else {
     const groups = Math.max(2, (n < 2 ? 2 : n < 5 ? 3 : n < 9 ? 4 : 5) + D.groups);
     const pool = [() => pat.stream(t, n >= 6 && Math.random() < .4 ? 1 : 0), () => pat.line(t, 0)];
@@ -742,7 +743,8 @@ function buildWave(n) {
     if (n >= 13) pool.push(() => pat.gravity(t));
     if (n >= 14) pool.push(() => pat.spiral(t));
     if (n >= 16) pool.push(() => pat.frigate(t));
-    const intro = { 2: ['split'], 3: ['snipe'], 4: ['swarm'], 6: ['mines'], 7: ['turret', 'blink'], 8: ['shield'], 9: ['cloak', 'carrier'], 11: ['missile'], 12: ['heal'], 13: ['gravity'], 14: ['spiral'], 16: ['frigate'] }[n] || [];   // 每种新敌机首次出现的那一波必定出场
+    const intro = { 2: ['split'], 3: ['snipe'], 4: ['swarm'], 6: ['mines'], 7: ['turret', 'blink'], 8: ['shield'], 9: ['cloak', 'carrier'], 11: ['missile'], 12: ['heal'], 13: ['gravity'], 14: ['spiral'], 16: ['frigate'] }[introSeen[n] ? 0 : n] || [];   // 每种新敌机首次出现的那一波必定出场
+    introSeen[n] = true;
     let lastIdx = -1;
     for (let i = 0; i < groups; i++) {
       let dur;
@@ -751,14 +753,14 @@ function buildWave(n) {
       t += dur * (i === groups - 1 ? 0 : .65);
     }
   }
-  if (!bossWave && n >= 3 && (n === 3 || Math.random() < .3)) pat.cargo(rand(2, 7));   // 运输机：第 3 波必定出现，之后随机路过
+  if (!bossWave && n >= 3 && (!introSeen.cargo || Math.random() < .3)) { introSeen.cargo = true; pat.cargo(rand(2, 7)); }   // 运输机：第 3 波必定出现，之后随机路过
   if (STAGES[sIdx].ground && !bossWave) {   // 地面场景：每波额外出现一批地面部队
     const add = (gk, cnt) => { const t0 = rand(.5, 3); for (let i = 0; i < cnt; i++) q.push({ t: t0, type: gk, x: rand(40, W - 40), gd: i * 80 + rand(0, 40), amp: rand(30, 60), ph: rand(0, TAU) }); };
     add(19, clamp(2 + Math.floor(n / 5), 2, 4));
     if (n >= 3) add(20, n >= 12 ? 3 : 2);
     if (n >= 7 && Math.random() < .6) add(21, n >= 14 ? 2 : 1);
     if (n >= 9 && Math.random() < .6) add(22, n >= 16 ? 2 : 1);
-    if (n >= 5 && (n === 6 || Math.random() < .55)) add(23, n >= 13 ? 2 : 1);
+    if (n >= 5 && (!introSeen.tower || Math.random() < .55)) { introSeen.tower = true; add(23, n >= 13 ? 2 : 1); }
   }
   q.sort((a, b) => a.t - b.t);
   return q;
@@ -869,7 +871,7 @@ function updateBoss(e, dt) {
     const tr = e.trail; if (!tr.length || Math.hypot(tr[0][0] - e.x, tr[0][1] - e.y) > 6) { tr.unshift([e.x, e.y]); if (tr.length > 38) tr.pop(); }
     e.segs = []; for (let i = 4; i < tr.length; i += 4) e.segs.push(tr[i]);
   }
-  e.bt -= dt * D.bossRate * (rage ? 1.2 : 1);
+  e.bt -= dt * D.bossRate * (rage ? 1.2 : 1) * ([.72, .84, .93][stageOf(wave)] || 1);   // 前三关的 Boss 出招更慢
   if (e.bt <= 0 && P.mode !== 'dead') bossAttack(e, rage);
   if (e.bk === 7 && rage && P.mode !== 'dead') { e.rt -= dt; if (e.rt <= 0) { e.rt = 2.4; hazards.push({ x: clamp(P.x, 16, W - 16), w: 24, t: 0, warn: .85, dur: .3, rgb: '255,240,150', fired: false }); Sfx.play('beamCharge'); } }   // 狂暴：不断落雷
   if (e.bk === 0 && rage) { e.rt -= dt; if (e.rt <= 0) { e.rt = .6; spawnEB(e.x - 44, e.y + 34, 0, 190 * D.spd, 5, '255,130,90'); spawnEB(e.x + 44, e.y + 34, 0, 190 * D.spd, 5, '255,130,90'); } }
@@ -919,13 +921,13 @@ function bossAttack(e, rage) {
       for (let i = 0; i < 16; i++) later.push({ t: i * .08, fn: () => { if (e.dead) return; for (const sg of (rage ? [1, -1] : [1])) { const a = a0 + sg * (-.6 + 1.2 * i / 15); spawnEB(e.x, e.y, Math.cos(a) * 165 * k, Math.sin(a) * 165 * k, 5, rgb); } } });
       e.bt = 2.3;
     }
-  } else if (e.bk === 5) {     // 极寒守卫：交错冰锥 / 暴风雪 / 冰环 + 冰矛（狂暴时两侧降下冰墙）
-    if (e.pat === 0) { for (let w = 0; w < 3; w++) later.push({ t: w * .3, fn: () => { if (!e.dead) for (let i = 0; i < 7; i++) aimEB(e.x, e.y + 30, 158 * k, (i - 3 + (w % 2) * .5) * .17, 5, rgb); } }); e.bt = 2; }
-    else if (e.pat === 1) { for (let i = 0; i < (rage ? 24 : 16); i++) later.push({ t: i * .1, fn: () => { if (!e.dead) spawnEB(rand(14, W - 14), 60, rand(-35, 35), 132 * k, 5, '225,246,255'); } }); e.bt = 2.4; }
+  } else if (e.bk === 5) {     // 极寒守卫（第 1 关，入门 Boss）：稀疏的冰锥 / 零星的落雪 / 冰环 + 一支冰矛（狂暴时两侧降下冰墙）
+    if (e.pat === 0) { for (let w = 0; w < (rage ? 3 : 2); w++) later.push({ t: w * .5, fn: () => { if (!e.dead) for (let i = 0; i < 5; i++) aimEB(e.x, e.y + 30, 122 * k, (i - 2 + (w % 2) * .5) * .27, 5, rgb); } }); e.bt = 2.6; }
+    else if (e.pat === 1) { for (let i = 0; i < (rage ? 12 : 8); i++) later.push({ t: i * .17, fn: () => { if (!e.dead) spawnEB(rand(14, W - 14), 60, rand(-18, 18), 108 * k, 5, '225,246,255'); } }); e.bt = 2.8; }
     else {
-      ring(18, 94 * k, rand(0, TAU), rgb); for (const o of [-.1, 0, .1]) aimEB(e.x, e.y + 30, 225 * k, o, 5.5, '255,255,255');
-      if (rage) { for (const x of [34, W - 34]) hazards.push({ x, w: 68, t: 0, warn: 1, dur: .9, rgb, fired: false }); Sfx.play('beamCharge'); }
-      e.bt = 2.1;
+      ring(rage ? 12 : 10, 84 * k, rand(0, TAU), rgb); aimEB(e.x, e.y + 30, 175 * k, 0, 5.5, '255,255,255');
+      if (rage) { for (const x of [22, W - 22]) hazards.push({ x, w: 44, t: 0, warn: 1.3, dur: .8, rgb, fired: false }); Sfx.play('beamCharge'); }
+      e.bt = 2.6;
     }
   } else if (e.bk === 6) {     // 熔岩炎龙：火焰吐息 / 全身鳞片齐射 / 喷发 + 落石
     if (e.pat === 0) { for (let i = 0; i < 12; i++) later.push({ t: i * .09, fn: () => { if (!e.dead) aimEB(e.x, e.y + 24, 192 * k, rand(-.12, .12), 6, '255,140,50'); } }); e.bt = 2; }
@@ -1869,7 +1871,7 @@ function updateWave(dt) {
     later.push({ t: .5, fn: () => {
       if (state !== 'playing') return;
       if (nw % WPS === 1) { const z = stageOf(nw); showBanner('第 ' + (z + 1) + ' 关', STAGES[z].name, '#9deaff', 2.6); Sfx.play('zone'); }
-      else if (!isBossWave(nw)) showBanner('第 ' + (stageOf(nw) + 1) + ' 关 · 第 2 波', '', '#ffd24a', 1.8);
+      else if (!isBossWave(nw)) showBanner('第 ' + (stageOf(nw) + 1) + ' 关 · 第 ' + ((nw - 1) % WPS + 1) + ' 波', '', '#ffd24a', 1.8);
     } });
   }
 }
@@ -2053,7 +2055,7 @@ function showOverlay(id) { document.querySelectorAll('.overlay').forEach(o => o.
 function resetWorld() {
   bullets.length = ebullets.length = enemies.length = powerups.length = particles.length = rings.length = popups.length = novas.length = later.length = 0;
   hazards.length = 0; perks = {}; combo = comboT = bestCombo = grazes = 0; seenElite = false;
-  seenTypes = {}; score = 0; wave = 0; DL = 1; kills = 0; gameTime = 0; pity = 0; deaths = 0; queue = []; waveState = 'pause'; waveT = 1.2; waveTime = 0;
+  seenTypes = {}; introSeen = {}; score = 0; wave = 0; DL = 1; kills = 0; gameTime = 0; pity = 0; deaths = 0; queue = []; waveState = 'pause'; waveT = 1.2; waveTime = 0;
   shake = hurtFlash = whiteFlash = 0; banner = null; resumeT = 0;
   Object.assign(P, { x: W / 2, y: H - 190, vx: 0, vy: 0, tilt: 0, mode: 'ship', lives: D.lives, wt: 'normal', wl: { normal: 1, laser: 0, lock: 0, blast: 0 }, pod: 0,
     podX: [W / 2, W / 2], podY: [H - 190, H - 190], podCd: [0, .5], extra: 0, shield: 0, speedT: 0, inv: 1.5,
