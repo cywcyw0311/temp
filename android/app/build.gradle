@@ -1,0 +1,68 @@
+// 星际突击 安卓 App：一个全屏的 WebView 外壳，直接加载仓库根目录下的网页版游戏
+// （index.html、game.js、vendor/three.min.js），构建时自动拷进 assets，网页版改了重新打包即可。
+plugins {
+    id 'com.android.application'
+}
+
+def webRoot = rootProject.file('..')
+def webAssets = layout.buildDirectory.dir('generated/webassets')
+
+tasks.register('syncWebAssets', Sync) {
+    from(webRoot) {
+        include 'index.html', 'game.js', 'vendor/three.min.js'
+    }
+    into webAssets
+}
+
+// 签名：用仓库里固定的签名文件，这样以后更新的 App 能直接覆盖安装，高分记录不会丢
+def ksProps = new Properties()
+def ksFile = rootProject.file('keystore/keystore.properties')
+if (ksFile.exists()) ksFile.withInputStream { ksProps.load(it) }
+
+android {
+    namespace 'com.familygames.starraid'
+    compileSdk 35
+
+    defaultConfig {
+        applicationId 'com.familygames.starraid'
+        minSdk 24
+        targetSdk 35
+        versionCode 1
+        versionName '1.0'
+    }
+
+    signingConfigs {
+        release {
+            if (ksFile.exists()) {
+                storeFile rootProject.file('keystore/' + ksProps['storeFile'])
+                storePassword ksProps['storePassword']
+                keyAlias ksProps['keyAlias']
+                keyPassword ksProps['keyPassword']
+            }
+        }
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            signingConfig signingConfigs.release
+        }
+    }
+
+    sourceSets {
+        main {
+            assets.srcDirs += webAssets
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+
+    androidResources {
+        noCompress 'html', 'js'
+    }
+}
+
+tasks.named('preBuild') { dependsOn 'syncWebAssets' }

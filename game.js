@@ -2914,6 +2914,24 @@ function frame(now) {
   if (state === 'playing') updateControlsUI();
   requestAnimationFrame(frame);
 }
+/* ---------- 安卓 App 外壳调用的接口（网页版不会用到） ---------- */
+window.__appInsets = (t, r, b, l) => {   // 刘海 / 挖孔的安全区（CSS 像素），界面据此避开摄像头
+  const st = document.documentElement.style;
+  st.setProperty('--sa-top', t + 'px'); st.setProperty('--sa-right', r + 'px'); st.setProperty('--sa-bottom', b + 'px'); st.setProperty('--sa-left', l + 'px');
+  btnGeo = null; resize();
+};
+window.__appPause = () => { pauseGame(); };   // 切到后台：暂停
+window.__appBack = () => {                    // 返回键：游戏中暂停，菜单里返回上一层，登录界面返回 'exit'
+  const open = (document.querySelector('.overlay.show') || {}).id;
+  if (state === 'playing') { pauseGame(); return 'ok'; }
+  if (open === 'help') { $('helpBack').click(); return 'ok'; }
+  if (open === 'scores') { $('scoresBack').click(); return 'ok'; }
+  if (open === 'diffpick') { $('pickCancel').click(); return 'ok'; }
+  if (state === 'paused') { resumeGame(); return 'ok'; }
+  if (open === 'over' || open === 'win') { toMenu(); return 'ok'; }
+  if (state === 'menu') return 'exit';
+  return 'ok';
+};
 try { R.init(); } catch (err) { glOK = false; $('glFail').style.display = 'flex'; }
 if (glOK) {
   addEventListener('resize', () => { btnGeo = null; resize(); });

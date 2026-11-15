@@ -13,6 +13,8 @@
 | `vendor/three.min.js` | Three.js r128（已放在仓库里，不需要联网） |
 | `standalone.html` | 把上面三个文件合并成的**单个文件**，可以直接发给别人或拷到手机里打开 |
 | `build.py` | 重新生成 `standalone.html`：`python3 build.py` |
+| `dist/StarRaid-1.0.apk` | **安卓 App 安装包**，拷到安卓手机上点开即可安装 |
+| `android/` | 安卓 App 的工程（全屏 WebView 外壳，打包时自动带上上面的网页版文件） |
 
 ## 运行
 
@@ -25,6 +27,26 @@ python3 -m http.server 8000   # 手机和电脑同一网络时访问 http://<电
 ```
 
 需要支持 WebGL 的浏览器（近几年的手机和电脑浏览器都支持）；不支持时页面会给出提示。桌面浏览器会以居中的竖屏比例显示，并支持键盘。
+
+## 安卓 App
+
+`dist/StarRaid-1.0.apk` 是打包好的安卓安装包（约 1.3 MB，支持 Android 7.0 及以上）。
+
+- **安装**：把 APK 发到手机上（微信 / QQ 文件、数据线、网盘都行），在手机上点开安装。第一次安装时系统会提示“禁止安装未知来源应用”，按提示允许即可；有的手机还会提示“未经检测的应用”，选“继续安装”。
+- **全面屏适配**：画面铺满整个屏幕，包括刘海 / 挖孔摄像头所在的区域，上下不留黑边；状态栏和导航栏会隐藏，从屏幕边缘滑动可以临时呼出。分数、暂停按钮等界面会自动避开摄像头。
+- **返回键**：游戏中按返回键 = 暂停；在暂停、高分榜、玩法说明等界面 = 返回上一层；在登录界面连按两次 = 退出。切到后台或来电时会自动暂停。
+- 固定竖屏，游戏时屏幕不会自动熄灭，音量键调节游戏音量；不受手机“字体大小”设置的影响。
+- 高分榜、难度选择保存在 App 里，卸载 App 会清空。
+
+重新打包（网页版改动后）：需要 JDK 17+、Gradle 8.13+ 和 Android SDK（platform 35、build-tools 35）。
+
+```bash
+cd android
+echo "sdk.dir=/path/to/android-sdk" > local.properties
+gradle assembleRelease          # 输出 app/build/outputs/apk/release/app-release.apk
+```
+
+打包时会自动把 `index.html`、`game.js`、`vendor/three.min.js` 拷进 App。签名：`android/keystore/` 里放签名文件 `starraid-release.jks` 和 `keystore.properties`（这两个文件含私钥和密码，**不放进仓库**）。以后的新版本必须用同一个签名打包，才能直接覆盖安装而不丢高分记录；换了签名就得先卸载旧版再装。
 
 ## 界面流程
 
